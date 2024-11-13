@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "287275380843",
+    "project_id": "mvicomposedemo",
+    "storage_bucket": "mvicomposedemo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:287275380843:android:34fd33f8a95d6a537f012e",
+        "android_client_info": {
+          "package_name": "com.jdacodes.mvicomposedemo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "287275380843-o1jddct5j9bhvm1jgd36kaetrjui1uta.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA__uDyDV6Y_DzoKNkiUMWV_Bd6llyUTLw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "287275380843-mi9s4sog9mp1ao510ni0oi1ka72a2d66.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
