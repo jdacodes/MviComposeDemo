@@ -28,7 +28,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,14 +42,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.facebook.CallbackManager
@@ -61,20 +58,17 @@ import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import com.jdacodes.mvicomposedemo.BuildConfig
 import com.jdacodes.mvicomposedemo.R
-import com.jdacodes.mvicomposedemo.auth.data.AuthenticationManager
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.composable.HorizontalDividerWithText
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.LoginState
-import com.jdacodes.mvicomposedemo.ui.theme.MviComposeDemoTheme
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
     state: AuthState,
+    uiEffect: Flow<LoginUiEffect>,
     onAction: (LoginAction) -> Unit,
-    onLoginSuccess: () -> Unit, // Navigation callback
-    onClickSignUp: () -> Unit,
-    onClickForgotPassword: () -> Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -87,32 +81,38 @@ fun LoginScreen(
         CallbackManager.Factory.create()
     }
     val launcher = rememberLauncherForActivityResult(
-        loginManager.createLogInActivityResultContract(callbackManager, null)) {
+        loginManager.createLogInActivityResultContract(callbackManager, null)
+    ) {
         // This is handled in FacebookCallback
     }
     val coroutineScope = rememberCoroutineScope()
     var showTopBar by remember { mutableStateOf(true) }
 
-
-    // Handle one-time events
+    // Handle UI effects
+    LaunchedEffect(true) {
+        uiEffect.collect { effect ->
+            when (effect) {
+                is LoginUiEffect.ShowToast -> {
+                    Toast.makeText(
+                        context,
+                        effect.message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                // Remove navigation handling from here as it will be handled through state
+                else -> {}
+            }
+        }
+    }
+    // Handle one-time navigation events
     LaunchedEffect(state) {
         when (state) {
             is AuthState.Success -> {
-                Toast.makeText(
-                    context,
-                    "Login successful!",
-                    Toast.LENGTH_SHORT
-                ).show()
-                onLoginSuccess()
+                onAction(LoginAction.NavigateToHome)
             }
 
             is AuthState.Error -> {
-                val error = (state as AuthState.Error).message
-                Toast.makeText(
-                    context,
-                    error,
-                    Toast.LENGTH_LONG
-                ).show()
+
             }
 
             else -> { /* do nothing */
@@ -272,7 +272,9 @@ fun LoginScreen(
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
-                                TextButton(onClick = onClickForgotPassword) {
+                                TextButton(onClick = {
+                                    onAction(LoginAction.NavigateToForgotPassword)
+                                }) {
                                     Text(
                                         text = "Forgot password?",
                                         color = MaterialTheme.colorScheme.primary,
@@ -283,9 +285,7 @@ fun LoginScreen(
                         item {
                             Spacer(Modifier.height(8.dp))
                             Button(
-                                onClick = {
-                                    onAction(LoginAction.SubmitLogin(context))
-                                },
+                                onClick = { onAction(LoginAction.SubmitLogin(context)) },
                                 enabled = formState.isValid,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -306,7 +306,7 @@ fun LoginScreen(
                             SignInButton(
                                 icon = Icons.Filled.Mail,
                                 buttonString = "Sign up with Email",
-                                onClick = onClickSignUp,
+                                onClick = { onAction(LoginAction.NavigateToSignUp) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                             )
@@ -367,93 +367,85 @@ fun LoginScreen(
     }
 }
 
-@PreviewLightDark
-@Composable
-fun LoginScreenPreview() {
-    MviComposeDemoTheme {
-        val previewState = LoginState(
-            email = "user@example.com",
-            password = "password123",
-            emailError = null,
-            passwordError = null,
-            isValid = true
-        )
-
-        Surface {
-            LoginScreen(
-                state = previewState,
-                onAction = { /* Preview, no action needed */ },
-                onLoginSuccess = { /* Preview, no action needed */ },
-                onClickSignUp = { /* Preview, no action needed */ },
-                onClickForgotPassword = {}
-            )
-        }
-    }
-}
-
-// Empty state preview
-@PreviewLightDark
-@Composable
-fun LoginScreenEmptyPreview() {
-    MviComposeDemoTheme {
-        val previewState = LoginState(
-            email = "",
-            password = "",
-            emailError = null,
-            passwordError = null,
-            isValid = false
-        )
-
-        Surface {
-            LoginScreen(
-                state = previewState,
-                onAction = { /* Preview, no action needed */ },
-                onLoginSuccess = { /* Preview, no action needed */ },
-                onClickSignUp = { /* Preview, no action needed */ },
-                onClickForgotPassword = {}
-            )
-        }
-    }
-}
-
-// Error state preview
-@PreviewLightDark
-@Composable
-fun LoginScreenErrorPreview() {
-    MviComposeDemoTheme {
-        val previewState = LoginState(
-            email = "invalid@email",
-            password = "123",
-            emailError = "Invalid email format",
-            passwordError = "Password must be at least 8 characters",
-            isValid = false
-        )
-
-        Surface {
-            LoginScreen(
-                state = previewState,
-                onAction = { /* Preview, no action needed */ },
-                onLoginSuccess = { /* Preview, no action needed */ },
-                onClickSignUp = { /* Preview, no action needed */ },
-                onClickForgotPassword = {}
-            )
-        }
-    }
-}
-
-// Loading state preview
-@PreviewLightDark
-@Composable
-fun LoginScreenLoadingPreview() {
-    MviComposeDemoTheme {
-        Surface {
-            LoginScreen(
-                state = AuthState.Loading,
-                onAction = { /* Preview, no action needed */ },
-                onLoginSuccess = { /* Preview, no action needed */ },
-                onClickSignUp = { /* Preview, no action needed */ },
-                onClickForgotPassword = {}
-            )
-        }
-    }
-}
+//@PreviewLightDark
+//@Composable
+//fun LoginScreenPreview() {
+//    MviComposeDemoTheme {
+//        val previewState = LoginState(
+//            email = "user@example.com",
+//            password = "password123",
+//            emailError = null,
+//            passwordError = null,
+//            isValid = true
+//        )
+//
+//        Surface {
+//            LoginScreen(
+//                state = previewState,
+//                onAction = { /* Preview, no action needed */ },
+//
+//                )
+//        }
+//    }
+//}
+//
+//// Empty state preview
+//@PreviewLightDark
+//@Composable
+//fun LoginScreenEmptyPreview() {
+//    MviComposeDemoTheme {
+//        val previewState = LoginState(
+//            email = "",
+//            password = "",
+//            emailError = null,
+//            passwordError = null,
+//            isValid = false
+//        )
+//
+//        Surface {
+//            LoginScreen(
+//                state = previewState,
+//                onAction = { /* Preview, no action needed */ },
+//
+//                )
+//        }
+//    }
+//}
+//
+//// Error state preview
+//@PreviewLightDark
+//@Composable
+//fun LoginScreenErrorPreview() {
+//    MviComposeDemoTheme {
+//        val previewState = LoginState(
+//            email = "invalid@email",
+//            password = "123",
+//            emailError = "Invalid email format",
+//            passwordError = "Password must be at least 8 characters",
+//            isValid = false
+//        )
+//
+//        Surface {
+//            LoginScreen(
+//                state = previewState,
+//                onAction = { /* Preview, no action needed */ },
+//
+//                )
+//        }
+//    }
+//}
+//
+//// Loading state preview
+//@PreviewLightDark
+//@Composable
+//fun LoginScreenLoadingPreview() {
+//    MviComposeDemoTheme {
+//        Surface {
+//            LoginScreen(
+//                state = AuthState.Loading,
+//                onAction = { /* Preview, no action needed */ },
+//
+//                )
+//        }
+//    }
+//}

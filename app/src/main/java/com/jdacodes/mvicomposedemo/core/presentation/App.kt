@@ -1,10 +1,13 @@
 package com.jdacodes.mvicomposedemo.core.presentation
 
-import android.widget.Toast
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -17,6 +20,7 @@ import com.jdacodes.mvicomposedemo.auth.data.repository.AuthRepositoryImpl
 import com.jdacodes.mvicomposedemo.auth.presentation.forgot_password.ForgotPasswordScreen
 import com.jdacodes.mvicomposedemo.auth.presentation.forgot_password.ForgotPasswordViewModel
 import com.jdacodes.mvicomposedemo.auth.presentation.forgot_password.ForgotPasswordViewModelFactory
+import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.LoginNavigator
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.LoginScreen
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.LoginViewModel
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.LoginViewModelFactory
@@ -34,12 +38,15 @@ data object SignUpRoute
 @Serializable
 data object ForgotPasswordRoute
 
+@Serializable
+data object HomeRoute
+
 @Composable
 fun App(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-        val authenticationManager = remember {
+    val authenticationManager = remember {
         AuthenticationManager(
             context,
             BuildConfig.WEB_CLIENT_ID_FIREBASE
@@ -52,31 +59,18 @@ fun App(
     NavHost(
         navController = rootNavController,
         startDestination = LoginRoute
-    ){
+    ) {
         composable<LoginRoute> {
             val context = LocalContext.current
-
+            val navigator = LoginNavigator(rootNavController)
             val viewModel: LoginViewModel = viewModel(
-                factory = LoginViewModelFactory(authRepository)
+                factory = LoginViewModelFactory(authRepository, navigator)
             )
             val state by viewModel.state.collectAsState()
             LoginScreen(
                 state = state,
+                uiEffect = viewModel.uiEffect,
                 onAction = viewModel::onAction,
-                onLoginSuccess = {
-                    Toast.makeText(context, "Welcome!", Toast.LENGTH_SHORT).show()
-                    // Navigate to home screen or dashboard
-                },
-                onClickSignUp = {
-                    rootNavController.navigate(SignUpRoute) {
-                        popUpTo(LoginRoute) { inclusive = false }
-                    }
-                },
-                onClickForgotPassword = {
-                    rootNavController.navigate(ForgotPasswordRoute) {
-                        popUpTo(LoginRoute) { inclusive = false }
-                    }
-                },
                 modifier = modifier
             )
         }
@@ -96,7 +90,7 @@ fun App(
                         popUpTo(SignUpRoute) { inclusive = true }
                     }
                 },
-                onNavigateBack = { rootNavController.navigateUp()},
+                onNavigateBack = { rootNavController.navigateUp() },
                 modifier = modifier
             )
 
@@ -116,12 +110,21 @@ fun App(
                         popUpTo(ForgotPasswordRoute) { inclusive = true }
                     }
                 },
-                onNavigateBack = { rootNavController.navigateUp()},
+                onNavigateBack = { rootNavController.navigateUp() },
                 modifier = modifier
             )
         }
-    }
 
+        composable<HomeRoute> {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "Home Screen")
+            }
+        }
+    }
 
 
 }

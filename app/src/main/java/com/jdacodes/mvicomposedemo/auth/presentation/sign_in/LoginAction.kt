@@ -9,4 +9,9 @@ sealed class LoginAction {
     data class SubmitLogin(val context: Context): LoginAction()
     data object SignInWithGoogle: LoginAction()
     data class SignInWithFacebook(val accessToken: AccessToken): LoginAction()
+
+    //Navigation Actions
+    data object NavigateToSignUp : LoginAction()
+    data object NavigateToForgotPassword : LoginAction()
+    data object NavigateToHome : LoginAction()
 }

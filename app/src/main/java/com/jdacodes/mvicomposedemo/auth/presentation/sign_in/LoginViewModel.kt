@@ -8,18 +8,23 @@ import com.facebook.AccessToken
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.LoginState
+import com.jdacodes.mvicomposedemo.core.presentation.Navigator
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
-    private val authRepository: AuthRepository
-) : ViewModel(
-
-) {
+    private val authRepository: AuthRepository,
+    private val navigator: Navigator
+) : ViewModel() {
     private val _state = MutableStateFlow<AuthState>(LoginState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
+
+    private val _uiEffect = Channel<LoginUiEffect>()
+    val uiEffect = _uiEffect.receiveAsFlow()
 
     fun onAction(action: LoginAction) {
         when (action) {
@@ -28,6 +33,9 @@ class LoginViewModel(
             is LoginAction.SubmitLogin -> submitLogin(action.context)
             LoginAction.SignInWithGoogle -> signInWithGoogle()
             is LoginAction.SignInWithFacebook -> signInWithFacebook(action.accessToken)
+            LoginAction.NavigateToForgotPassword -> navigator.navigateToForgotPassword()
+            LoginAction.NavigateToHome -> navigator.navigateToHome()
+            LoginAction.NavigateToSignUp -> navigator.navigateToSignUp()
         }
     }
 
@@ -72,8 +80,10 @@ class LoginViewModel(
                     currentState.password
                 )
                 _state.value = AuthState.Success(result)
+                _uiEffect.send(LoginUiEffect.ShowToast("Login successful!"))
             } catch (e: Exception) {
                 _state.value = AuthState.Error(e.message ?: "Login failed")
+                _uiEffect.send(LoginUiEffect.ShowToast(e.message ?: "Login failed"))
             }
         }
     }
@@ -84,8 +94,10 @@ class LoginViewModel(
             try {
                 val result = authRepository.signInWithGoogle()
                 _state.value = AuthState.Success(result)
+                _uiEffect.send(LoginUiEffect.ShowToast("Login successful!"))
             } catch (e: Exception) {
                 _state.value = AuthState.Error(e.message ?: "Login with Google failed")
+                _uiEffect.send(LoginUiEffect.ShowToast(e.message ?: "Login with Google failed"))
             }
         }
     }
@@ -96,20 +108,23 @@ class LoginViewModel(
             try {
                 val result = authRepository.signInWithFacebook(accessToken)
                 _state.value = AuthState.Success(result)
+                _uiEffect.send(LoginUiEffect.ShowToast("Login successful!"))
             } catch (e: Exception) {
                 _state.value = AuthState.Error(e.message ?: "Login with Facebook failed")
+                _uiEffect.send(LoginUiEffect.ShowToast(e.message ?: "Login with Facebook failed"))
             }
         }
     }
 }
 
 class LoginViewModelFactory(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val navigator: Navigator
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return LoginViewModel(authRepository) as T
+            return LoginViewModel(authRepository, navigator) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
