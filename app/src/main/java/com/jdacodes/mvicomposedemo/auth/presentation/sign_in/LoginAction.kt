@@ -14,4 +14,5 @@ sealed class LoginAction {
     data object NavigateToSignUp : LoginAction()
     data object NavigateToForgotPassword : LoginAction()
     data object NavigateToHome : LoginAction()
+    data object ReturnToForm : LoginAction()
 }

@@ -26,6 +26,9 @@ class LoginViewModel(
     private val _uiEffect = Channel<LoginUiEffect>()
     val uiEffect = _uiEffect.receiveAsFlow()
 
+    // Store the last valid form state
+    private var lastFormState: LoginState? = null
+
     fun onAction(action: LoginAction) {
         when (action) {
             is LoginAction.UpdateEmail -> updateEmail(action.email)
@@ -36,7 +39,13 @@ class LoginViewModel(
             LoginAction.NavigateToForgotPassword -> navigator.navigateToForgotPassword()
             LoginAction.NavigateToHome -> navigator.navigateToHome()
             LoginAction.NavigateToSignUp -> navigator.navigateToSignUp()
+            LoginAction.ReturnToForm -> returnToForm()
         }
+    }
+
+    private fun returnToForm() {
+        // Return to the last form state or create a new one
+        _state.value = lastFormState ?: LoginState()
     }
 
     private fun updateEmail(email: String) {
@@ -65,6 +74,7 @@ class LoginViewModel(
                     currentState.email.isNotEmpty() &&
                     currentState.password.isNotEmpty()
         )
+        lastFormState = _state.value as LoginState
     }
 
     private fun submitLogin(context: Context) {
@@ -82,8 +92,8 @@ class LoginViewModel(
                 _state.value = AuthState.Success(result)
                 _uiEffect.send(LoginUiEffect.ShowToast("Login successful!"))
             } catch (e: Exception) {
-                _state.value = AuthState.Error(e.message ?: "Login failed")
                 _uiEffect.send(LoginUiEffect.ShowToast(e.message ?: "Login failed"))
+                returnToForm()
             }
         }
     }
@@ -96,8 +106,8 @@ class LoginViewModel(
                 _state.value = AuthState.Success(result)
                 _uiEffect.send(LoginUiEffect.ShowToast("Login successful!"))
             } catch (e: Exception) {
-                _state.value = AuthState.Error(e.message ?: "Login with Google failed")
                 _uiEffect.send(LoginUiEffect.ShowToast(e.message ?: "Login with Google failed"))
+                returnToForm()
             }
         }
     }
@@ -110,8 +120,8 @@ class LoginViewModel(
                 _state.value = AuthState.Success(result)
                 _uiEffect.send(LoginUiEffect.ShowToast("Login successful!"))
             } catch (e: Exception) {
-                _state.value = AuthState.Error(e.message ?: "Login with Facebook failed")
                 _uiEffect.send(LoginUiEffect.ShowToast(e.message ?: "Login with Facebook failed"))
+                returnToForm()
             }
         }
     }
