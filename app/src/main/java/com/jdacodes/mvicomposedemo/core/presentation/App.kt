@@ -17,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import com.jdacodes.mvicomposedemo.BuildConfig
 import com.jdacodes.mvicomposedemo.auth.data.AuthenticationManager
 import com.jdacodes.mvicomposedemo.auth.data.repository.AuthRepositoryImpl
+import com.jdacodes.mvicomposedemo.auth.presentation.forgot_password.ForgotPasswordNavigator
 import com.jdacodes.mvicomposedemo.auth.presentation.forgot_password.ForgotPasswordScreen
 import com.jdacodes.mvicomposedemo.auth.presentation.forgot_password.ForgotPasswordViewModel
 import com.jdacodes.mvicomposedemo.auth.presentation.forgot_password.ForgotPasswordViewModelFactory
@@ -98,18 +99,15 @@ fun App(
 
         composable<ForgotPasswordRoute> {
             val context = LocalContext.current
+            val navigator = ForgotPasswordNavigator(rootNavController)
             val viewModel: ForgotPasswordViewModel = viewModel(
-                factory = ForgotPasswordViewModelFactory(authRepository)
+                factory = ForgotPasswordViewModelFactory(authRepository, navigator)
             )
             val state by viewModel.state.collectAsState()
             ForgotPasswordScreen(
                 state = state,
                 onAction = viewModel::onAction,
-                onForgotPasswordSuccess = {
-                    rootNavController.navigate(LoginRoute) {
-                        popUpTo(ForgotPasswordRoute) { inclusive = true }
-                    }
-                },
+                uiEffect = viewModel.uiEffect,
                 onNavigateBack = { rootNavController.navigateUp() },
                 modifier = modifier
             )

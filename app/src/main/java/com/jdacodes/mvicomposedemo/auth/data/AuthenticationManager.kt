@@ -25,12 +25,15 @@ import com.jdacodes.mvicomposedemo.auth.domain.model.User
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 import java.security.MessageDigest
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 
 class AuthenticationManager(
     private val context: Context,
-    private val webClientId: String) {
+    private val webClientId: String
+) {
     private val auth = Firebase.auth
 
     fun createAccountWithEmail(email: String, password: String): Flow<AuthResponse> = callbackFlow {
@@ -64,6 +67,7 @@ class AuthenticationManager(
             }
         awaitClose()
     }
+
 
     private fun createNonce(): String {
         val rawNonce = UUID.randomUUID().toString()
@@ -129,33 +133,6 @@ class AuthenticationManager(
         awaitClose()
     }
 
-    fun createIntent(onSuccess: (IntentSenderRequest) -> Unit) {
-        // Creating the request
-        val request = GetSignInIntentRequest.builder()
-            .setServerClientId(webClientId)
-            .build()
-
-        // Gathering the SignInIntent
-        Identity.getSignInClient(context)
-            .getSignInIntent(request)
-            .addOnSuccessListener { result: PendingIntent ->
-                // Handling the response
-                try {
-                    onSuccess(
-                        IntentSenderRequest.Builder(
-                            result.intentSender
-                        ).build()
-                    )
-
-                } catch (e: IntentSender.SendIntentException) {
-                    Log.e("Google Sign-in", "failed")
-                }
-            }
-            .addOnFailureListener { exception: Exception? ->
-                Log.e("Google Sign-in failed", exception?.message ?: "failed")
-            }
-    }
-
     fun signInWithFacebook(token: AccessToken) = callbackFlow {
         val credential = FacebookAuthProvider.getCredential(token.token)
         auth.signInWithCredential(credential)
@@ -179,7 +156,17 @@ class AuthenticationManager(
             }
         awaitClose()
     }
+
+    suspend fun sendPasswordResetEmail(email: String) = try {
+        auth.sendPasswordResetEmail(email).await()
+         AuthResponse.Success(null)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        if (e is CancellationException) throw e else AuthResponse.Error(e.message)
+
+    }
 }
+
 
 interface AuthResponse {
     data class Success(val user: User?) : AuthResponse

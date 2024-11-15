@@ -25,7 +25,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,41 +37,47 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import com.jdacodes.mvicomposedemo.R
+import com.jdacodes.mvicomposedemo.auth.presentation.ForgotPasswordUiEffect
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.ForgotPasswordState
 import com.jdacodes.mvicomposedemo.ui.theme.MviComposeDemoTheme
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 
 @Composable
 fun ForgotPasswordScreen(
     state: AuthState,
+    uiEffect: Flow<ForgotPasswordUiEffect>,
     onAction: (ForgotPasswordAction) -> Unit,
-    onForgotPasswordSuccess: () -> Unit, //Navigation callback
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var showTopBar by remember { mutableStateOf(true) }
 
+    // Handle UI effects
+    LaunchedEffect(true) {
+        uiEffect.collect { effect ->
+            when (effect) {
+                is ForgotPasswordUiEffect.ShowToast -> {
+                    Toast.makeText(
+                        context,
+                        effect.message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                // Remove navigation handling from here as it will be handled through state
+                else -> {}
+            }
+        }
+    }
+
     //Handle one-time events
     LaunchedEffect(state) {
         when (state) {
             is AuthState.Sent -> {
-                Toast.makeText(
-                    context,
-                    "Forgot password successfully sent!",
-                    Toast.LENGTH_SHORT
-                ).show()
-                onForgotPasswordSuccess()
-            }
-
-            is AuthState.Error -> {
-                val error = (state as AuthState.Error).message
-                Toast.makeText(
-                    context,
-                    error,
-                    Toast.LENGTH_LONG
-                ).show()
+                onAction(ForgotPasswordAction.NavigateToLogin)
             }
 
             else -> { /* do nothing */
@@ -113,6 +118,7 @@ fun ForgotPasswordScreen(
         ) {
             when (state) {
                 is ForgotPasswordState -> {
+                    showTopBar = true
                     val formState = state as ForgotPasswordState
                     LazyColumn(
                         modifier = Modifier.fillMaxWidth(),
@@ -189,13 +195,6 @@ fun ForgotPasswordScreen(
                     // will handle navigation
                 }
 
-                is AuthState.Error -> {
-                    // Error state is handled by LaunchedEffect showing Toast
-                    // We can return to form state after showing error
-                    LaunchedEffect(Unit) {
-                        onAction(ForgotPasswordAction.UpdateEmail(""))
-                    }
-                }
 
                 else -> { // do nothing for other AuthStates
                 }
@@ -221,7 +220,7 @@ fun ForgotPasswordScreenPreview() {
             ForgotPasswordScreen(
                 state = previewState,
                 onAction = { /* Preview, no action needed */ },
-                onForgotPasswordSuccess = {},
+                uiEffect = emptyFlow(),
                 onNavigateBack = {}
             )
         }
@@ -245,7 +244,7 @@ fun ForgotPasswordScreenEmptyPreview() {
             ForgotPasswordScreen(
                 state = previewState,
                 onAction = { /* Preview, no action needed */ },
-                onForgotPasswordSuccess = {},
+                uiEffect = emptyFlow(),
                 onNavigateBack = {}
             )
         }
@@ -269,7 +268,7 @@ fun ForgotPasswordScreenErrorPreview() {
             ForgotPasswordScreen(
                 state = previewState,
                 onAction = { /* Preview, no action needed */ },
-                onForgotPasswordSuccess = {},
+                uiEffect = emptyFlow(),
                 onNavigateBack = {}
             )
         }
@@ -285,7 +284,7 @@ fun ForgotPasswordScreenLoadingPreview() {
             ForgotPasswordScreen(
                 state = AuthState.Loading,
                 onAction = { /* Preview, no action needed */ },
-                onForgotPasswordSuccess = {},
+                uiEffect = emptyFlow(),
                 onNavigateBack = {}
             )
         }

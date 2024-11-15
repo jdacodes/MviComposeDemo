@@ -11,5 +11,5 @@ interface AuthRepository {
     suspend fun signUp(email: String, password: String, username: String): User?
     suspend fun signInWithGoogle(): User
     suspend fun signInWithFacebook(token: AccessToken): User
-    suspend fun forgotPassword(email:String)
+    suspend fun forgotPassword(email:String): Boolean
 }

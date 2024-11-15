@@ -27,4 +27,8 @@ class LoginNavigator(
             popUpTo(LoginRoute) { inclusive = true }
         }
     }
+
+    override fun navigateToLogin() {
+        TODO("Not yet implemented")
+    }
 }

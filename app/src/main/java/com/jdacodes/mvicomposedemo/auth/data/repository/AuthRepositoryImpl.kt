@@ -24,6 +24,7 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
                                 username = response.user?.username ?: "",
                             )
                         }
+
                         is AuthResponse.Error -> throw Exception(response.message)
                         else -> throw Exception("Invalid credentials")
                     }
@@ -63,6 +64,7 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
                                 username = response.user?.username ?: "",
                             )
                         }
+
                         is AuthResponse.Error -> throw Exception(response.message)
                         else -> throw Exception("Invalid credentials")
                     }
@@ -75,27 +77,38 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
 
     override suspend fun signInWithFacebook(token: AccessToken): User {
         return try {
-             authenticationManager.signInWithFacebook(token)
-                 .map { response ->
-                     when (response) {
-                         is AuthResponse.Success -> {
-                             User(
-                                 id = response.user?.id ?: "",
-                                 email = response.user?.email ?: "",
-                                 username = response.user?.username ?: "",
-                             )
-                         }
-                         is AuthResponse.Error -> throw Exception(response.message)
-                         else -> throw Exception("Invalid credentials")
-                     }
-                 }
-                 .first()
-        }catch (e: Exception) {
+            authenticationManager.signInWithFacebook(token)
+                .map { response ->
+                    when (response) {
+                        is AuthResponse.Success -> {
+                            User(
+                                id = response.user?.id ?: "",
+                                email = response.user?.email ?: "",
+                                username = response.user?.username ?: "",
+                            )
+                        }
+
+                        is AuthResponse.Error -> throw Exception(response.message)
+                        else -> throw Exception("Invalid credentials")
+                    }
+                }
+                .first()
+        } catch (e: Exception) {
             throw e
         }
     }
 
-    override suspend fun forgotPassword(email: String) {
-        delay(2000)
+    override suspend fun forgotPassword(email: String): Boolean {
+        return try {
+            val response = authenticationManager.sendPasswordResetEmail(email)
+            when (response) {
+                is AuthResponse.Success ->  true
+                is AuthResponse.Error -> false
+                else -> false
+            }
+        } catch (e: Exception) {
+            throw e
+        }
+
     }
 }

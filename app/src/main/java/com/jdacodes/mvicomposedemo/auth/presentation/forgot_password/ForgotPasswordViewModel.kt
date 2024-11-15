@@ -4,25 +4,42 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
+import com.jdacodes.mvicomposedemo.auth.presentation.ForgotPasswordUiEffect
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.ForgotPasswordState
-import com.jdacodes.mvicomposedemo.auth.presentation.states.SignUpState
+import com.jdacodes.mvicomposedemo.auth.presentation.states.LoginState
+import com.jdacodes.mvicomposedemo.core.presentation.Navigator
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class ForgotPasswordViewModel(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val navigator: Navigator
 ) : ViewModel() {
     private val _state = MutableStateFlow<AuthState>(ForgotPasswordState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
+
+    private val _uiEffect = Channel<ForgotPasswordUiEffect>()
+    val uiEffect = _uiEffect.receiveAsFlow()
+
+    // Store the last valid form state
+    private var lastFormState: ForgotPasswordState? = null
 
     fun onAction(action: ForgotPasswordAction) {
         when (action) {
             is ForgotPasswordAction.UpdateEmail -> updateEmail(action.email)
             ForgotPasswordAction.SubmitForgotPassword -> submitForgotPassword()
+            ForgotPasswordAction.NavigateToLogin -> navigator.navigateToLogin()
         }
+    }
+
+    private fun returnToForm() {
+        // Return to the last form state or create a new one
+        _state.value = lastFormState ?: LoginState()
     }
 
     private fun updateEmail(email: String) {
@@ -40,6 +57,7 @@ class ForgotPasswordViewModel(
             isValid = currentState.emailError == null &&
                     currentState.email.isNotEmpty()
         )
+        lastFormState = _state.value as ForgotPasswordState
     }
 
 
@@ -53,9 +71,17 @@ class ForgotPasswordViewModel(
                 val result = authRepository.forgotPassword(
                     currentState.email
                 )
-                _state.value = AuthState.Sent
+                if (result) {
+                    _state.value = AuthState.Sent
+                    _uiEffect.send(ForgotPasswordUiEffect.ShowToast("Email is sent successfully"))
+                } else {
+                    _uiEffect.send(ForgotPasswordUiEffect.ShowToast("Email is not sent"))
+                    returnToForm()
+                }
+
             } catch (e: Exception) {
-                _state.value = AuthState.Error(e.message ?: "Forgot password failed")
+                _uiEffect.send(ForgotPasswordUiEffect.ShowToast("Forgot password failed"))
+                returnToForm()
             }
         }
     }
@@ -63,12 +89,13 @@ class ForgotPasswordViewModel(
 
 
 class ForgotPasswordViewModelFactory(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val navigator: Navigator
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ForgotPasswordViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ForgotPasswordViewModel(authRepository) as T
+            return ForgotPasswordViewModel(authRepository, navigator) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
