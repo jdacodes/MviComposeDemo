@@ -30,7 +30,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,37 +47,42 @@ import com.jdacodes.mvicomposedemo.R
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.SignUpState
 import com.jdacodes.mvicomposedemo.ui.theme.MviComposeDemoTheme
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 @Composable
 fun SignUpScreen(
     state: AuthState,
     onAction: (SignUpAction) -> Unit,
-    onSignUpSuccess: () -> Unit, //Navigation callback
+    uiEffect: Flow<SignUpUiEffect>,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var showTopBar by remember { mutableStateOf(true) }
 
+    // Handle UI effects
+    LaunchedEffect(true) {
+        uiEffect.collect { effect ->
+            when (effect) {
+                is SignUpUiEffect.ShowToast -> {
+                    Toast.makeText(
+                        context,
+                        effect.message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                // Remove navigation handling from here as it will be handled through state
+                else -> {}
+            }
+        }
+    }
+
     //Handle one-time events
     LaunchedEffect(state) {
         when (state) {
             is AuthState.Success -> {
-                Toast.makeText(
-                    context,
-                    "Sign-up successful!",
-                    Toast.LENGTH_SHORT
-                ).show()
-                onSignUpSuccess()
-            }
-
-            is AuthState.Error -> {
-                val error = (state as AuthState.Error).message
-                Toast.makeText(
-                    context,
-                    error,
-                    Toast.LENGTH_LONG
-                ).show()
+                onAction(SignUpAction.NavigateToLogin)
             }
 
             else -> { /* do nothing */
@@ -87,7 +91,7 @@ fun SignUpScreen(
     }
     Scaffold(
         topBar = {
-            if (showTopBar){
+            if (showTopBar) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.Start,
@@ -118,6 +122,7 @@ fun SignUpScreen(
         ) {
             when (state) {
                 is SignUpState -> {
+                    showTopBar = true
                     val formState = state as SignUpState
                     LazyColumn(
                         modifier = Modifier.fillMaxWidth(),
@@ -292,13 +297,6 @@ fun SignUpScreen(
                     // will handle navigation
                 }
 
-                is AuthState.Error -> {
-                    // Error state is handled by LaunchedEffect showing Toast
-                    // We can return to form state after showing error
-                    LaunchedEffect(Unit) {
-                        onAction(SignUpAction.UpdateEmail(""))
-                    }
-                }
 
                 else -> { // do nothing for other AuthStates
                 }
@@ -324,7 +322,7 @@ fun SignUpScreenPreview() {
             SignUpScreen(
                 state = previewState,
                 onAction = { /* Preview, no action needed */ },
-                onSignUpSuccess = {},
+                uiEffect = emptyFlow(),
                 onNavigateBack = {}
             )
         }
@@ -348,7 +346,7 @@ fun SignUpScreenEmptyPreview() {
             SignUpScreen(
                 state = previewState,
                 onAction = { /* Preview, no action needed */ },
-                onSignUpSuccess = {},
+                uiEffect = emptyFlow(),
                 onNavigateBack = {}
             )
         }
@@ -376,7 +374,7 @@ fun SignUpScreenErrorPreview() {
             SignUpScreen(
                 state = previewState,
                 onAction = { /* Preview, no action needed */ },
-                onSignUpSuccess = {},
+                uiEffect = emptyFlow(),
                 onNavigateBack = {}
             )
         }
@@ -392,7 +390,7 @@ fun SignUpScreenLoadingPreview() {
             SignUpScreen(
                 state = AuthState.Loading,
                 onAction = { /* Preview, no action needed */ },
-                onSignUpSuccess = {},
+                uiEffect = emptyFlow(),
                 onNavigateBack = {}
             )
         }

@@ -6,4 +6,7 @@ sealed class SignUpAction {
     data class UpdateConfirmPassword(val confirmPassword: String) : SignUpAction()
     data class UpdateUsername(val username: String) : SignUpAction()
     data object SubmitSignUp : SignUpAction()
+
+    //Navigation Action
+    data object NavigateToLogin: SignUpAction()
 }

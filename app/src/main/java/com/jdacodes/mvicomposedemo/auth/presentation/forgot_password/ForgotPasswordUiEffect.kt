@@ -1,6 +1,4 @@
-package com.jdacodes.mvicomposedemo.auth.presentation
-
-import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.LoginUiEffect
+package com.jdacodes.mvicomposedemo.auth.presentation.forgot_password
 
 sealed class ForgotPasswordUiEffect {
     data class ShowToast(val message: String) : ForgotPasswordUiEffect()

@@ -37,7 +37,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import com.jdacodes.mvicomposedemo.R
-import com.jdacodes.mvicomposedemo.auth.presentation.ForgotPasswordUiEffect
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.ForgotPasswordState
 import com.jdacodes.mvicomposedemo.ui.theme.MviComposeDemoTheme

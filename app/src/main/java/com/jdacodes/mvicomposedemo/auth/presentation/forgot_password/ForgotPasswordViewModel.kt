@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
-import com.jdacodes.mvicomposedemo.auth.presentation.ForgotPasswordUiEffect
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.ForgotPasswordState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.LoginState

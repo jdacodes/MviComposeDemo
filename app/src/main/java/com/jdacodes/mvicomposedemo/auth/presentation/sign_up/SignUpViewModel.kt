@@ -5,17 +5,28 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
+import com.jdacodes.mvicomposedemo.auth.presentation.states.LoginState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.SignUpState
+import com.jdacodes.mvicomposedemo.core.presentation.Navigator
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class SignUpViewModel(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val navigator: Navigator
 ) : ViewModel() {
     private val _state = MutableStateFlow<AuthState>(SignUpState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
+
+    private val _uiEffect = Channel<SignUpUiEffect>()
+    val uiEffect = _uiEffect.receiveAsFlow()
+
+    // Store the last valid form state
+    private var lastFormState: SignUpState? = null
 
     fun onAction(action: SignUpAction) {
         when (action) {
@@ -24,7 +35,13 @@ class SignUpViewModel(
             SignUpAction.SubmitSignUp -> submitSignUp()
             is SignUpAction.UpdateConfirmPassword -> updateConfirmPassword(action.confirmPassword)
             is SignUpAction.UpdateUsername -> updateUsername(action.username)
+            SignUpAction.NavigateToLogin -> navigator.navigateToLogin()
         }
+    }
+
+    private fun returnToForm() {
+        // Return to the last form state or create a new one
+        _state.value = lastFormState ?: LoginState()
     }
 
 
@@ -43,7 +60,10 @@ class SignUpViewModel(
             password = password,
             passwordError = currentState.validatePassword(password),
             // Revalidate confirm password when password changes
-            confirmPasswordError = currentState.validateConfirmPassword(currentState.confirmPassword, password)
+            confirmPasswordError = currentState.validateConfirmPassword(
+                currentState.confirmPassword,
+                password
+            )
         )
         validateForm()
     }
@@ -52,7 +72,10 @@ class SignUpViewModel(
         val currentState = _state.value as? SignUpState ?: return
         _state.value = currentState.copy(
             confirmPassword = confirm,
-            confirmPasswordError = currentState.validateConfirmPassword(confirm, currentState.password)
+            confirmPasswordError = currentState.validateConfirmPassword(
+                confirm,
+                currentState.password
+            )
         )
         validateForm()
     }
@@ -79,6 +102,7 @@ class SignUpViewModel(
                     currentState.username.isNotEmpty() &&
                     currentState.password == currentState.confirmPassword
         )
+        lastFormState = _state.value as SignUpState
     }
 
 
@@ -95,20 +119,23 @@ class SignUpViewModel(
                     currentState.username
                 )
                 _state.value = AuthState.Success(result)
+                _uiEffect.send(SignUpUiEffect.ShowToast("Sign up successful"))
             } catch (e: Exception) {
-                _state.value = AuthState.Error(e.message ?: "Signup failed")
+                _uiEffect.send(SignUpUiEffect.ShowToast("Sign up failed"))
+                returnToForm()
             }
         }
     }
 }
 
 class SignUpViewModelFactory(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val navigator: Navigator
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SignUpViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return SignUpViewModel(authRepository) as T
+            return SignUpViewModel(authRepository, navigator) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

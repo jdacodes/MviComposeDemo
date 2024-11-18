@@ -4,12 +4,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,6 +25,7 @@ import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.LoginNavigator
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.LoginScreen
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.LoginViewModel
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.LoginViewModelFactory
+import com.jdacodes.mvicomposedemo.auth.presentation.sign_up.SignUpNavigator
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_up.SignUpScreen
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_up.SignUpViewModel
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_up.SignUpViewModelFactory
@@ -67,7 +68,7 @@ fun App(
             val viewModel: LoginViewModel = viewModel(
                 factory = LoginViewModelFactory(authRepository, navigator)
             )
-            val state by viewModel.state.collectAsState()
+            val state by viewModel.state.collectAsStateWithLifecycle()
             LoginScreen(
                 state = state,
                 uiEffect = viewModel.uiEffect,
@@ -78,19 +79,15 @@ fun App(
 
         composable<SignUpRoute> {
             val context = LocalContext.current
-
+            val navigator = SignUpNavigator(rootNavController)
             val viewModel: SignUpViewModel = viewModel(
-                factory = SignUpViewModelFactory(authRepository)
+                factory = SignUpViewModelFactory(authRepository, navigator)
             )
-            val state by viewModel.state.collectAsState()
+            val state by viewModel.state.collectAsStateWithLifecycle()
             SignUpScreen(
                 state = state,
                 onAction = viewModel::onAction,
-                onSignUpSuccess = {
-                    rootNavController.navigate(LoginRoute) {
-                        popUpTo(SignUpRoute) { inclusive = true }
-                    }
-                },
+                uiEffect = viewModel.uiEffect,
                 onNavigateBack = { rootNavController.navigateUp() },
                 modifier = modifier
             )
@@ -103,7 +100,7 @@ fun App(
             val viewModel: ForgotPasswordViewModel = viewModel(
                 factory = ForgotPasswordViewModelFactory(authRepository, navigator)
             )
-            val state by viewModel.state.collectAsState()
+            val state by viewModel.state.collectAsStateWithLifecycle()
             ForgotPasswordScreen(
                 state = state,
                 onAction = viewModel::onAction,
