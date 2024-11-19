@@ -1,34 +1,34 @@
 package com.jdacodes.mvicomposedemo.auth.data
 
-import android.app.PendingIntent
 import android.content.Context
-import android.content.IntentSender
-import android.util.Log
-import androidx.activity.result.IntentSenderRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
 import com.facebook.AccessToken
-import com.google.android.gms.auth.api.identity.GetSignInIntentRequest
-import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FacebookAuthProvider
+import com.google.firebase.auth.FirebaseAuthEmailException
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
-import com.jdacodes.mvicomposedemo.BuildConfig
-import com.jdacodes.mvicomposedemo.R
 import com.jdacodes.mvicomposedemo.auth.domain.model.User
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 import java.security.MessageDigest
 import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.coroutines.coroutineContext
 
 class AuthenticationManager(
     private val context: Context,
@@ -36,35 +36,52 @@ class AuthenticationManager(
 ) {
     private val auth = Firebase.auth
 
-    fun createAccountWithEmail(email: String, password: String): Flow<AuthResponse> = callbackFlow {
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    trySend(AuthResponse.Success(null))
-                } else {
-                    trySend(AuthResponse.Error(task.exception?.message ?: ""))
+    fun createAccountWithEmail(email: String, password: String): Flow<AuthResponse<Unit>> =
+        callbackFlow {
+            try {
+                auth.createUserWithEmailAndPassword(email, password).await()
+                trySend(AuthResponse.Success(Unit))
+            } catch (e: Exception) {
+                val authError = when (e) {
+                    is FirebaseAuthInvalidCredentialsException -> AuthError.InvalidCredentials
+                    is FirebaseAuthInvalidUserException -> AuthError.InvalidEmail
+                    is FirebaseAuthUserCollisionException -> AuthError.AccountAlreadyExists
+                    is FirebaseAuthEmailException -> AuthError.InvalidEmail
+                    else -> AuthError.Unknown // Or AuthError.Unknown(e.message) if you want to include the message
                 }
+                trySend(AuthResponse.Error(authError))
             }
-        awaitClose()
-    }
+            awaitClose()
+        }
 
-    fun loginWithEmail(email: String, password: String): Flow<AuthResponse> = callbackFlow {
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    trySend(
-                        AuthResponse.Success(
-                            User(
-                                id = task.result.user?.uid ?: "",
-                                email = task.result.user?.email ?: "",
-                                username = task.result.user?.displayName ?: "",
+    fun loginWithEmail(email: String, password: String): Flow<AuthResponse<User>> = callbackFlow {
+        try {
+
+            auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        trySend(
+                            AuthResponse.Success(
+                                User(
+                                    id = task.result.user?.uid ?: "",
+                                    email = task.result.user?.email ?: "",
+                                    username = task.result.user?.displayName ?: "",
+                                )
                             )
                         )
-                    )
-                } else {
-                    trySend(AuthResponse.Error(task.exception?.message ?: ""))
+                    } else {
+                        trySend(AuthResponse.Error(AuthError.InvalidCredentials))
+                    }
                 }
+        } catch (e: Exception) {
+            val authError = when (e) {
+                is FirebaseAuthInvalidCredentialsException -> AuthError.InvalidCredentials
+                is FirebaseAuthInvalidUserException -> AuthError.InvalidEmail // Assuming this maps to invalid email
+                // Add other specific exception mappings as needed
+                else -> AuthError.Unknown
             }
+            trySend(AuthResponse.Error(authError))
+        }
         awaitClose()
     }
 
@@ -80,7 +97,7 @@ class AuthenticationManager(
         }
     }
 
-    suspend fun signInWithGoogle(): Flow<AuthResponse> = callbackFlow {
+    suspend fun signInWithGoogle(): Flow<AuthResponse<User>> = callbackFlow {
         val googleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false)
             // Pass web client ID
@@ -111,64 +128,86 @@ class AuthenticationManager(
                         // Sign in to firebase
                         val firebaseCredential =
                             GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
-                        auth.signInWithCredential(firebaseCredential)
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    trySend(AuthResponse.Success(null)).isSuccess
-                                } else {
-                                    trySend(AuthResponse.Error(message = task.exception?.message)).isFailure
-                                }
-                            }
+                        val user = auth.signInWithCredential(firebaseCredential).await().user
+                        trySend(AuthResponse.Success(firebaseUserToUser(user))).isSuccess
                     } catch (e: GoogleIdTokenParsingException) {
-                        trySend(AuthResponse.Error(message = e.message)).isFailure
+                        Timber.e("Google ID token parsing failed")
+                        trySend(AuthResponse.Error(AuthError.GoogleIdTokenParsing)).isFailure
+                    } catch (e: FirebaseAuthInvalidCredentialsException) {
+                        Timber.e("Invalid credentials for Google sign-in")
+                        AuthResponse.Error(AuthError.InvalidCredentials)
                     }
+
                 } else {
                     // Catch any unrecognized custom credential type here.
-                    trySend(AuthResponse.Error(message = "Unexpected type of credential")).isFailure
+                    Timber.e("Unknown credential type: ${credential.type}")
+                    trySend(AuthResponse.Error(AuthError.InvalidCredentials)).isFailure
                 }
             }
         } catch (e: GetCredentialException) {
-            trySend(AuthResponse.Error(message = e.message)).isFailure
+            trySend(AuthResponse.Error(AuthError.Unknown)).isFailure
         }
         awaitClose()
     }
 
     fun signInWithFacebook(token: AccessToken) = callbackFlow {
         val credential = FacebookAuthProvider.getCredential(token.token)
-        auth.signInWithCredential(credential)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    // Sign in success, update UI with the signed-in user's information
-                    trySend(
-                        AuthResponse.Success(
-                            User(
-                                id = task.result.user?.uid ?: "",
-                                email = task.result.user?.email ?: "",
-                                username = task.result.user?.displayName ?: "",
-                            )
-                        )
-                    )
-
-                } else {
-                    // If sign in fails, display a message to the user.
-                    trySend(AuthResponse.Error(task.exception?.message ?: ""))
-                }
+        try {
+            val authResult = auth.signInWithCredential(credential).await()
+            trySend(AuthResponse.Success(firebaseUserToUser(authResult.user)))
+        } catch (e: Exception) {
+            val authError = when (e) {
+                is FirebaseAuthInvalidCredentialsException -> AuthError.InvalidCredentials
+                is FirebaseAuthInvalidUserException -> AuthError.InvalidEmail // Assuming this maps to invalid email
+                is FirebaseAuthUserCollisionException -> AuthError.AccountAlreadyExists
+                // Add other specific exception mappings as needed
+                else -> AuthError.Unknown
             }
+            trySend(AuthResponse.Error(authError))
+        }
         awaitClose()
     }
 
-    suspend fun sendPasswordResetEmail(email: String) = try {
+    suspend fun sendPasswordResetEmail(email: String): AuthResponse<Unit> = try {
+        if (!coroutineContext.isActive) {
+            throw CancellationException("Password reset operation cancelled")
+        }
         auth.sendPasswordResetEmail(email).await()
-         AuthResponse.Success(null)
+        AuthResponse.Success(Unit)
+    } catch (e: FirebaseAuthInvalidUserException) {
+        Timber.e(e, "Invalid user email: %s", email)
+        AuthResponse.Error(AuthError.InvalidEmail)
+    } catch (e: FirebaseAuthInvalidCredentialsException) {
+        Timber.e(e, "Invalid credentials for password reset")
+        AuthResponse.Error(AuthError.InvalidCredentials)
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
-        e.printStackTrace()
-        if (e is CancellationException) throw e else AuthResponse.Error(e.message)
-
+        Timber.e(e, "Unexpected error during password reset")
+        AuthResponse.Error(AuthError.Unknown)
     }
+
 }
 
 
-interface AuthResponse {
-    data class Success(val user: User?) : AuthResponse
-    data class Error(val message: String?) : AuthResponse
+sealed class AuthResponse<out T> {
+    data class Success<out T>(val data: T) : AuthResponse<T>()
+    data class Error(val error: AuthError) : AuthResponse<Nothing>()
+}
+
+enum class AuthError {
+    InvalidEmail,
+    InvalidCredentials,
+    Unknown,
+    AccountAlreadyExists,
+    GoogleIdTokenParsing,
+    LoginWithEmail
+}
+
+fun firebaseUserToUser(firebaseUser: FirebaseUser?): User {
+    return User(
+        id = firebaseUser?.uid ?: "",
+        email = firebaseUser?.email ?: "",
+        username = firebaseUser?.displayName ?: ""
+    )
 }
