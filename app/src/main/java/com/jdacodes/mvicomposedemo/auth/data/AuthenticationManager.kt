@@ -201,7 +201,6 @@ enum class AuthError {
     Unknown,
     AccountAlreadyExists,
     GoogleIdTokenParsing,
-    LoginWithEmail
 }
 
 fun firebaseUserToUser(firebaseUser: FirebaseUser?): User {

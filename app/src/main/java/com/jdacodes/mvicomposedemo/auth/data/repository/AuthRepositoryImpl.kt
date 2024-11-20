@@ -45,6 +45,7 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
                                 }
 
                                 else -> {
+                                    Timber.e(response.error.toString())
                                     throw Exception(response.error.toString())
                                 }
                             }
@@ -59,7 +60,12 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
                 }
                 .first() // Convert Flow to single value}
         } catch (e: Exception) {
-            throw e
+            // Handle unexpected exceptions
+            Timber.e(e, "Unexpected error during login")
+            if (e is CancellationException) throw e else throw UnknownAuthException(
+                "Unexpected error",
+                e
+            )
         }
     }
 
@@ -71,16 +77,48 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
                     when (response) {
                         is AuthResponse.Success -> null  // Return null on success
                         is AuthResponse.Error -> {
-                            Timber.e("Sign up failed with error: ${response.error}")
-                            throw Exception(response.error.toString())
+                            when (response.error) {
+                                AuthError.InvalidCredentials -> {
+                                    Timber.e("Invalid credentials")
+                                    throw InvalidCredentialsException("Invalid credentials")
+                                }
+
+                                AuthError.InvalidEmail -> {
+                                    Timber.e("Invalid email address")
+                                    throw InvalidEmailException("Invalid email address")
+                                }
+
+                                AuthError.AccountAlreadyExists -> {
+                                    Timber.e("Account already exists")
+                                    throw AccountAlreadyExistsException("Account already exists")
+                                }
+
+                                AuthError.Unknown -> {
+                                    Timber.e("Unknown authentication error")
+                                    throw UnknownAuthException("Unknown authentication error")
+                                }
+
+                                else -> {
+                                    Timber.e("Sign up failed with error: ${response.error}")
+                                    throw Exception(response.error.toString())
+                                }
+                            }
                         }
 
-                        else -> throw Exception("Unknown error occurred")
+                        else -> {
+                            Timber.e("Unknown error occurred")
+                            throw Exception("Unknown error occurred")
+                        }
                     }
                 }
                 .first()
         } catch (e: Exception) {
-            throw e
+            // Handle unexpected exceptions
+            Timber.e(e, "Unexpected error during sign up")
+            if (e is CancellationException) throw e else throw UnknownAuthException(
+                "Unexpected error",
+                e
+            )
         }
     }
 
@@ -120,14 +158,12 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
                 }
                 .first() // Convert Flow to single value}
         } catch (e: Exception) {
-            // Handle exceptions during flow collection or unexpected exceptions
-            when (e) {
-                is CancellationException -> throw e // Re-throw cancellation exceptions
-                else -> {
-                    Timber.e(e, "Error during Google sign-in") // Log the error
-                    throw GoogleIdAuthenticationException("Failed to sign in with Google") // Throw a custom exception
-                }
-            }
+            // Handle unexpected exceptions
+            Timber.e(e, "Unexpected error during google sign-in")
+            if (e is CancellationException) throw e else throw UnknownAuthException(
+                "Unexpected error",
+                e
+            )
         }
     }
 
@@ -166,19 +202,23 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
                                     throw UnknownAuthException("Unknown authentication error")
                                 }
 
-                                AuthError.GoogleIdTokenParsing -> {
-                                    Timber.e("Google ID token parsing failed")
-                                    throw GoogleIdTokenParsingException("Google ID token parsing failed")
+                                else -> {
+                                    Timber.e(response.error.toString())
+                                    throw Exception(response.error.toString())
                                 }
 
-                                AuthError.LoginWithEmail -> TODO()
                             }
                         }
                     }
                 }
                 .first()
         } catch (e: Exception) {
-            throw e
+            // Handle unexpected exceptions
+            Timber.e(e, "Unexpected error during facebook sign-in")
+            if (e is CancellationException) throw e else throw UnknownAuthException(
+                "Unexpected error",
+                e
+            )
         }
     }
 
@@ -229,5 +269,4 @@ class InvalidEmailException(message: String) : Exception(message)
 class InvalidCredentialsException(message: String) : Exception(message)
 class AccountAlreadyExistsException(message: String) : Exception(message)
 class GoogleIdTokenParsingException(message: String) : Exception(message)
-class GoogleIdAuthenticationException(message: String) : Exception(message)
 class UnknownAuthException(message: String, cause: Throwable? = null) : Exception(message, cause)
