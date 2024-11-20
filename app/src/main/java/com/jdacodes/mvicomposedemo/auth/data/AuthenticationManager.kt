@@ -187,8 +187,34 @@ class AuthenticationManager(
         AuthResponse.Error(AuthError.Unknown)
     }
 
-}
+    fun signOutUser() {
+        try {
+            auth.signOut()
+        } catch (e: Exception) {
+            Timber.e(e, "Error signing out")
 
+        }
+    }
+
+
+    fun getCurrentUser(): AuthResponse<User?> {
+        return try {
+            val firebaseUser = auth.currentUser
+            val user = firebaseUser?.let { firebaseUserToUser(it) }
+            return if (user != null) {
+                Timber.d("Current user: $user")
+                AuthResponse.Success(user)
+            } else {
+                Timber.d("No current user")
+                AuthResponse.Error(AuthError.Unknown)
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Unexpected error during get current user reset")
+            AuthResponse.Error(AuthError.Unknown)
+        }
+
+    }
+}
 
 sealed class AuthResponse<out T> {
     data class Success<out T>(val data: T) : AuthResponse<T>()

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -29,6 +30,10 @@ import com.jdacodes.mvicomposedemo.auth.presentation.sign_up.SignUpNavigator
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_up.SignUpScreen
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_up.SignUpViewModel
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_up.SignUpViewModelFactory
+import com.jdacodes.mvicomposedemo.profile.presentation.ProfileNavigator
+import com.jdacodes.mvicomposedemo.profile.presentation.ProfileScreen
+import com.jdacodes.mvicomposedemo.profile.presentation.ProfileViewModel
+import com.jdacodes.mvicomposedemo.profile.presentation.ProfileViewModelFactory
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -111,13 +116,17 @@ fun App(
         }
 
         composable<HomeRoute> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "Home Screen")
-            }
+            val navigator = ProfileNavigator(rootNavController)
+            val viewModel: ProfileViewModel = viewModel(
+                factory = ProfileViewModelFactory(authRepository, navigator))
+            val state by viewModel.state.collectAsStateWithLifecycle()
+
+            ProfileScreen(
+                state = state,
+                modifier = modifier,
+                uiEffect = viewModel.effect,
+                onAction = viewModel::onAction
+            )
         }
     }
 

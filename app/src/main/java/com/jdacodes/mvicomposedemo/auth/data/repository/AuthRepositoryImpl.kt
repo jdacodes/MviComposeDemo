@@ -263,6 +263,25 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
         }
 
     }
+
+    override suspend fun getCurrentUser(): User? {
+        return try {
+            val response = authenticationManager.getCurrentUser()
+            when (response) {
+                is AuthResponse.Success -> {
+                    response.data
+                }
+                is AuthResponse.Error -> null
+            }
+        } catch (e: Exception) {
+            // Handle unexpected exceptions
+            Timber.e(e, "Unexpected error during get user reset")
+            if (e is CancellationException) throw e else throw UnknownAuthException(
+                "Unexpected error",
+                e
+            )
+        }
+    }
 }
 
 class InvalidEmailException(message: String) : Exception(message)
