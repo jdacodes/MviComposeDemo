@@ -79,9 +79,6 @@ fun LoginScreen(
 ) {
 
     val context = LocalContext.current
-    FacebookSdk.setApplicationId(BuildConfig.APP_ID_FACEBOOK)
-    FacebookSdk.setClientToken(BuildConfig.CLIENT_TOKEN_FACEBOOK)
-    FacebookSdk.sdkInitialize(context)
     val loginManager = LoginManager.getInstance()
     val callbackManager = remember {
         CallbackManager.Factory.create()

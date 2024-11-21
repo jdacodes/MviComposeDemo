@@ -17,7 +17,8 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
+        manifestPlaceholders["facebook_app_id"] = project.properties["facebook_app_id"] ?: ""
+        manifestPlaceholders["facebook_client_token"] = project.properties["facebook_client_token"] ?: ""
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
