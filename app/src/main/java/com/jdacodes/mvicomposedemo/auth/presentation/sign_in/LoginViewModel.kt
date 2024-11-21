@@ -2,7 +2,6 @@ package com.jdacodes.mvicomposedemo.auth.presentation.sign_in
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.facebook.AccessToken
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
@@ -127,15 +126,3 @@ class LoginViewModel(
     }
 }
 
-class LoginViewModelFactory(
-    private val authRepository: AuthRepository,
-    private val navigator: Navigator
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return LoginViewModel(authRepository, navigator) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}

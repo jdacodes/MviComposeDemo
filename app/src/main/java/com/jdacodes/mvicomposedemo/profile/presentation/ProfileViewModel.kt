@@ -1,7 +1,6 @@
 package com.jdacodes.mvicomposedemo.profile.presentation
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
 import kotlinx.coroutines.channels.Channel
@@ -28,7 +27,7 @@ class ProfileViewModel(
         }
     }
 
-    fun getCurrentUser() {
+    private fun getCurrentUser() {
         viewModelScope.launch {
             _state.value = ProfileState.Loading // Set loading state
             try {
@@ -43,16 +42,3 @@ class ProfileViewModel(
     }
 }
 
-class ProfileViewModelFactory(
-    private val authRepository: AuthRepository,
-    private val navigator: ProfileNavigator,
-) :
-    ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return ProfileViewModel(authRepository, navigator) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}

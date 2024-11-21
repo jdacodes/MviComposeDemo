@@ -4,7 +4,7 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -61,14 +61,19 @@ fun ProfileScreen(
             )
         },
         modifier = modifier.padding(16.dp)
-    ) { padding ->
+    ) { innerPadding ->
         Box(
             modifier = Modifier
-                .padding(padding)
+                .padding(innerPadding)
         ) {
             when (state) {
                 is ProfileState.Loading -> {
-                    CircularProgressIndicator() // Show loading indicator
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
 
                 is ProfileState.Success -> {

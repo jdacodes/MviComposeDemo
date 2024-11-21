@@ -1,7 +1,6 @@
 package com.jdacodes.mvicomposedemo.auth.presentation.forgot_password
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
@@ -87,15 +86,3 @@ class ForgotPasswordViewModel(
 }
 
 
-class ForgotPasswordViewModelFactory(
-    private val authRepository: AuthRepository,
-    private val navigator: Navigator
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ForgotPasswordViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return ForgotPasswordViewModel(authRepository, navigator) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}

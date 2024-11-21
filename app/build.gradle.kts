@@ -53,6 +53,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.bundles.koin)
     implementation(libs.timber)
     implementation(libs.facebook.android.sdk)
     implementation(libs.androidx.credentials)

@@ -1,7 +1,6 @@
 package com.jdacodes.mvicomposedemo.auth.presentation.sign_up
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
@@ -128,15 +127,3 @@ class SignUpViewModel(
     }
 }
 
-class SignUpViewModelFactory(
-    private val authRepository: AuthRepository,
-    private val navigator: Navigator
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(SignUpViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return SignUpViewModel(authRepository, navigator) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
