@@ -54,6 +54,12 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.material3.adaptive)
+    implementation(libs.androidx.material3.adaptive.navigation.suite)
+    implementation(libs.androidx.material3.adaptive.layout)
+    implementation(libs.androidx.material3.adaptive.navigation)
+    implementation(libs.androidx.material3.windowsize)
+    implementation(libs.androidx.compose.navigation)
     implementation(libs.bundles.koin)
     implementation(libs.timber)
     implementation(libs.facebook.android.sdk)
@@ -64,7 +70,6 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.androidx.material.icons.extended)
-    implementation(libs.androidx.compose.navigation)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)

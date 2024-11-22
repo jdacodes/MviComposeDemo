@@ -1,9 +1,9 @@
 package com.jdacodes.mvicomposedemo.auth.presentation.forgot_password
 
 import androidx.navigation.NavController
-import com.jdacodes.mvicomposedemo.core.presentation.ForgotPasswordRoute
-import com.jdacodes.mvicomposedemo.core.presentation.LoginRoute
 import com.jdacodes.mvicomposedemo.core.presentation.Navigator
+import com.jdacodes.mvicomposedemo.navigation.util.ForgotPasswordRoute
+import com.jdacodes.mvicomposedemo.navigation.util.LoginRoute
 
 class ForgotPasswordNavigator(
     private val navController: NavController

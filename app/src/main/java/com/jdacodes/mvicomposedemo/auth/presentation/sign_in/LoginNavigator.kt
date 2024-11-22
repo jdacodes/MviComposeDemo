@@ -1,11 +1,12 @@
 package com.jdacodes.mvicomposedemo.auth.presentation.sign_in
 
 import androidx.navigation.NavController
-import com.jdacodes.mvicomposedemo.core.presentation.ForgotPasswordRoute
-import com.jdacodes.mvicomposedemo.core.presentation.HomeRoute
-import com.jdacodes.mvicomposedemo.core.presentation.LoginRoute
 import com.jdacodes.mvicomposedemo.core.presentation.Navigator
-import com.jdacodes.mvicomposedemo.core.presentation.SignUpRoute
+import com.jdacodes.mvicomposedemo.navigation.util.ForgotPasswordRoute
+import com.jdacodes.mvicomposedemo.navigation.util.HomeGraph
+import com.jdacodes.mvicomposedemo.navigation.util.LoginRoute
+import com.jdacodes.mvicomposedemo.navigation.util.ProfileRoute
+import com.jdacodes.mvicomposedemo.navigation.util.SignUpRoute
 
 class LoginNavigator(
     private val navController: NavController
@@ -23,7 +24,7 @@ class LoginNavigator(
     }
 
     override fun navigateToHome() {
-        navController.navigate(HomeRoute) {
+        navController.navigate(HomeGraph) {
             popUpTo(LoginRoute) { inclusive = true }
         }
     }

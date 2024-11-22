@@ -1,9 +1,9 @@
 package com.jdacodes.mvicomposedemo.auth.presentation.sign_up
 
 import androidx.navigation.NavController
-import com.jdacodes.mvicomposedemo.core.presentation.LoginRoute
 import com.jdacodes.mvicomposedemo.core.presentation.Navigator
-import com.jdacodes.mvicomposedemo.core.presentation.SignUpRoute
+import com.jdacodes.mvicomposedemo.navigation.util.LoginRoute
+import com.jdacodes.mvicomposedemo.navigation.util.SignUpRoute
 
 class SignUpNavigator(
     private val navController: NavController
