@@ -6,7 +6,8 @@ import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.ForgotPasswordState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.LoginState
-import com.jdacodes.mvicomposedemo.core.presentation.Navigator
+import com.jdacodes.mvicomposedemo.navigation.util.Navigator
+import com.jdacodes.mvicomposedemo.navigation.util.navigateForgotPasswordToLoginRoute
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,7 +32,7 @@ class ForgotPasswordViewModel(
         when (action) {
             is ForgotPasswordAction.UpdateEmail -> updateEmail(action.email)
             ForgotPasswordAction.SubmitForgotPassword -> submitForgotPassword()
-            ForgotPasswordAction.NavigateToLogin -> navigator.navigateToLogin()
+            ForgotPasswordAction.NavigateToLogin -> navigator.navigateForgotPasswordToLoginRoute()
         }
     }
 

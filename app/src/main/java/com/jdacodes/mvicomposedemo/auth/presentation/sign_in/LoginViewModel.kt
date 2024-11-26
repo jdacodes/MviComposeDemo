@@ -7,7 +7,10 @@ import com.facebook.AccessToken
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.LoginState
-import com.jdacodes.mvicomposedemo.core.presentation.Navigator
+import com.jdacodes.mvicomposedemo.navigation.util.Navigator
+import com.jdacodes.mvicomposedemo.navigation.util.navigateLoginToForgotPasswordRoute
+import com.jdacodes.mvicomposedemo.navigation.util.navigateLoginToHomeGraph
+import com.jdacodes.mvicomposedemo.navigation.util.navigateLoginToSignUpRoute
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -35,9 +38,9 @@ class LoginViewModel(
             is LoginAction.SubmitLogin -> submitLogin(action.context)
             LoginAction.SignInWithGoogle -> signInWithGoogle()
             is LoginAction.SignInWithFacebook -> signInWithFacebook(action.accessToken)
-            LoginAction.NavigateToForgotPassword -> navigator.navigateToForgotPassword()
-            LoginAction.NavigateToHome -> navigator.navigateToHome()
-            LoginAction.NavigateToSignUp -> navigator.navigateToSignUp()
+            LoginAction.NavigateToForgotPassword -> navigator.navigateLoginToForgotPasswordRoute()
+            LoginAction.NavigateToHome -> navigator.navigateLoginToHomeGraph()
+            LoginAction.NavigateToSignUp -> navigator.navigateLoginToSignUpRoute()
             LoginAction.ReturnToForm -> returnToForm()
         }
     }

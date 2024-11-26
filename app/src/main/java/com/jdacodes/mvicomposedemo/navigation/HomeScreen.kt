@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.rememberNavController
-import com.jdacodes.mvicomposedemo.navigation.util.HomeNavGraph
 
 
 @Composable
@@ -57,10 +56,18 @@ fun HomeScreen(
             HomeDestinations.entries.forEach { destination ->
                 item(
                     icon = {
-                        Icon(
-                            destination.icon,
-                            contentDescription = stringResource(destination.contentDescription)
-                        )
+                        if(destination == currentDestination){
+                            Icon(
+                                destination.iconSelected,
+                                contentDescription = stringResource(destination.contentDescription)
+                            )
+                        } else {
+                            Icon(
+                                destination.iconUnselected,
+                                contentDescription = stringResource(destination.contentDescription)
+                            )
+                        }
+
                     },
                     label = { Text(stringResource(destination.label)) },
                     selected = destination == currentDestination,
