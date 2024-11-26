@@ -25,11 +25,7 @@ fun App(
         )
         composable<HomeGraph> {
             HomeScreen(
-                logout = {
-                    navController.navigate(AuthGraph) {
-                        popUpTo(0) {}
-                    }
-                },
+                rootNavController = navController,
                 modifier = modifier
             )
 

@@ -21,13 +21,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.jdacodes.mvicomposedemo.auth.domain.model.User
+import com.jdacodes.mvicomposedemo.profile.presentation.composable.ProfileTopBar
 import kotlinx.coroutines.flow.Flow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     state: ProfileState,
+    rootNavController: NavHostController,
     modifier: Modifier = Modifier,
     uiEffect: Flow<ProfileUiEffect>,
     onAction: (ProfileAction) -> Unit
@@ -44,6 +47,10 @@ fun ProfileScreen(
                         Toast.LENGTH_SHORT
                     ).show()
                 }
+
+                 is ProfileUiEffect.Navigate -> {
+                    onAction(ProfileAction.NavigateToAuth(rootNavController))
+                }
             }
         }
     }
@@ -53,8 +60,8 @@ fun ProfileScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(text = "Profile") },
+            ProfileTopBar(
+                onSignOutClick = { onAction(ProfileAction.SignOut) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)

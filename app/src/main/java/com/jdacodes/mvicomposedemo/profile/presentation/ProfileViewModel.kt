@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
 import com.jdacodes.mvicomposedemo.navigation.util.Navigator
+import com.jdacodes.mvicomposedemo.navigation.util.navigateProfileToAuthGraph
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,10 @@ class ProfileViewModel(
     fun onAction(action: ProfileAction) {
         when (action) {
             ProfileAction.DisplayUserDetails -> getCurrentUser()
+            ProfileAction.SignOut -> signOutUser()
+             is ProfileAction.NavigateToAuth -> {
+                navigator.navigateProfileToAuthGraph(action.navController)
+            }
         }
     }
 
@@ -41,5 +46,23 @@ class ProfileViewModel(
             }
         }
     }
-}
 
+    private fun signOutUser() {
+        viewModelScope.launch {
+            _state.value = ProfileState.Loading
+            try {
+                val result = authRepository.signOutUser()
+                if (result){
+                    _effect.send(ProfileUiEffect.Navigate)
+                    _effect.send(ProfileUiEffect.ShowToast("User signed out successfully"))
+                } else {
+                    _effect.send(ProfileUiEffect.ShowToast("Error signing out"))
+                }
+
+
+            }catch (e: Exception){
+                _effect.send(ProfileUiEffect.ShowToast("Error signing out"))
+            }
+        }
+    }
+}

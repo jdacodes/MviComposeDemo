@@ -21,7 +21,7 @@ import org.koin.core.parameter.parametersOf
 @Composable
 fun HomeNavGraph(
     navController: NavHostController,
-    logout: () -> Unit,
+    rootNavController: NavHostController,
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -35,6 +35,7 @@ fun HomeNavGraph(
 
             ProfileScreen(
                 state = state,
+                rootNavController = rootNavController,
                 modifier = modifier,
                 uiEffect = viewModel.effect,
                 onAction = viewModel::onAction

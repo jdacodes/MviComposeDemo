@@ -20,12 +20,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 
 
 @Composable
 fun HomeScreen(
-    logout: () -> Unit,
+    rootNavController: NavHostController,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
@@ -89,7 +90,7 @@ fun HomeScreen(
     ) {
         HomeNavGraph(
             navController = navController,
-            logout = logout,
+            rootNavController = rootNavController,
             modifier = modifier
         )
     }

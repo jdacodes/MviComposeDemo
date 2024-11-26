@@ -282,6 +282,29 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
             )
         }
     }
+
+    override suspend fun signOutUser(): Boolean {
+        return try {
+            val response = authenticationManager.signOutUser()
+            when (response) {
+                is AuthResponse.Success -> {
+                    Timber.d("User sign-out successful")
+                    true
+                }
+                is AuthResponse.Error -> {
+                    Timber.e("Unexpected error during signing out")
+                    false
+                }
+            }
+        }catch (e: Exception) {
+            // Handle unexpected exceptions
+            Timber.e(e, "Unexpected error during signing out")
+            if (e is CancellationException) throw e else throw UnknownAuthException(
+                "Unexpected error",
+                e
+            )
+        }
+    }
 }
 
 class InvalidEmailException(message: String) : Exception(message)

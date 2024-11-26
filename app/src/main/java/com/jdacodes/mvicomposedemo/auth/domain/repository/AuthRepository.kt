@@ -13,4 +13,5 @@ interface AuthRepository {
     suspend fun signInWithFacebook(token: AccessToken): User
     suspend fun forgotPassword(email:String): Boolean
     suspend fun getCurrentUser(): User?
+    suspend fun signOutUser(): Boolean
 }

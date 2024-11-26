@@ -187,15 +187,14 @@ class AuthenticationManager(
         AuthResponse.Error(AuthError.Unknown)
     }
 
-    fun signOutUser() {
+    fun signOutUser(): AuthResponse<Unit> =
         try {
             auth.signOut()
+            AuthResponse.Success(Unit)
         } catch (e: Exception) {
             Timber.e(e, "Error signing out")
-
+            AuthResponse.Error(AuthError.Unknown)
         }
-    }
-
 
     fun getCurrentUser(): AuthResponse<User?> {
         return try {
