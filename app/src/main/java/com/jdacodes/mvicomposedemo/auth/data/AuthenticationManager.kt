@@ -208,12 +208,22 @@ class AuthenticationManager(
                 AuthResponse.Error(AuthError.Unknown)
             }
         } catch (e: Exception) {
-            Timber.e(e, "Unexpected error during get current user reset")
+            Timber.e(e, "Unexpected error during get current user")
             AuthResponse.Error(AuthError.Unknown)
         }
 
     }
+
+    fun reloadFirebaseUser(): AuthResponse<Boolean> {
+        return try {
+            auth.currentUser?.reload()
+            AuthResponse.Success(true)
+        } catch (e: Exception) {
+            AuthResponse.Error(AuthError.Unknown)
+        }
+    }
 }
+
 
 sealed class AuthResponse<out T> {
     data class Success<out T>(val data: T) : AuthResponse<T>()

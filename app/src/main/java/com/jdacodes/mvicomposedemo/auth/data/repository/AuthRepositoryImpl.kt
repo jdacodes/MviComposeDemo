@@ -271,7 +271,22 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
                 is AuthResponse.Success -> {
                     response.data
                 }
-                is AuthResponse.Error -> null
+
+                is AuthResponse.Error -> {
+                    when (response.error) {
+
+                        AuthError.Unknown -> {
+                            Timber.e("Unexpected error getting your account")
+                            throw UnknownAuthException("Unexpected error getting your account")
+                        }
+
+                        else -> {
+                            Timber.e("Unexpected error getting your account")
+                            throw UnknownAuthException("Unexpected error getting your account")
+                        }
+                    }
+
+                }
             }
         } catch (e: Exception) {
             // Handle unexpected exceptions
@@ -291,14 +306,39 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
                     Timber.d("User sign-out successful")
                     true
                 }
+
                 is AuthResponse.Error -> {
                     Timber.e("Unexpected error during signing out")
                     false
                 }
             }
-        }catch (e: Exception) {
+        } catch (e: Exception) {
             // Handle unexpected exceptions
             Timber.e(e, "Unexpected error during signing out")
+            if (e is CancellationException) throw e else throw UnknownAuthException(
+                "Unexpected error",
+                e
+            )
+        }
+    }
+
+    override suspend fun reloadUser(): Boolean {
+        return try {
+            val response = authenticationManager.reloadFirebaseUser()
+            when (response) {
+                is AuthResponse.Success -> {
+                    Timber.d("User reload successful")
+                    true
+                }
+
+                is AuthResponse.Error -> {
+                    Timber.e("Unexpected error during user reload")
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            // Handle unexpected exceptions
+            Timber.e(e, "Unexpected error during user reload")
             if (e is CancellationException) throw e else throw UnknownAuthException(
                 "Unexpected error",
                 e

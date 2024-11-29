@@ -14,11 +14,12 @@ import com.jdacodes.mvicomposedemo.navigation.util.HomeGraph
 @Composable
 fun App(
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    startDestination: Any,
 ) {
     NavHost(
         navController = navController,
-        startDestination = AuthGraph
+        startDestination = startDestination
     ) {
         authNavGraph(
             navController, modifier
