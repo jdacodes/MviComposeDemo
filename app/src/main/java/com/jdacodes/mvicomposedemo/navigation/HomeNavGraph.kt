@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.jdacodes.mvicomposedemo.auth.presentation.timer.presentation.TimerScreen
 import com.jdacodes.mvicomposedemo.navigation.util.DashboardRoute
 import com.jdacodes.mvicomposedemo.navigation.util.ProfileRoute
 import com.jdacodes.mvicomposedemo.navigation.util.TimerRoute
@@ -47,7 +48,7 @@ fun HomeNavGraph(
                 modifier = modifier,
                 contentAlignment = Alignment.Center
             ) {
-                Text("Pomodoro Timer")
+                TimerScreen()
             }
         }
 

@@ -6,7 +6,6 @@ import android.view.animation.OvershootInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,7 +21,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import androidx.navigation.compose.rememberNavController
-import com.jdacodes.mvicomposedemo.auth.presentation.splash.SplashViewModel
+import com.jdacodes.mvicomposedemo.auth.presentation.splash.presentation.SplashViewModel
 import com.jdacodes.mvicomposedemo.core.presentation.App
 import com.jdacodes.mvicomposedemo.navigation.util.AuthGraph
 import com.jdacodes.mvicomposedemo.navigation.util.HomeGraph

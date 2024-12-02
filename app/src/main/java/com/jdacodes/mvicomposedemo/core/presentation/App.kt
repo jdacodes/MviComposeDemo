@@ -8,7 +8,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.jdacodes.mvicomposedemo.navigation.HomeScreen
 import com.jdacodes.mvicomposedemo.navigation.authNavGraph
-import com.jdacodes.mvicomposedemo.navigation.util.AuthGraph
 import com.jdacodes.mvicomposedemo.navigation.util.HomeGraph
 
 @Composable

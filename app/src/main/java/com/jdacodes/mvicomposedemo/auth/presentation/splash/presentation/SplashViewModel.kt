@@ -1,4 +1,4 @@
-package com.jdacodes.mvicomposedemo.auth.presentation.splash
+package com.jdacodes.mvicomposedemo.auth.presentation.splash.presentation
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
