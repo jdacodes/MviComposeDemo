@@ -3,14 +3,17 @@ package com.jdacodes.mvicomposedemo.navigation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.jdacodes.mvicomposedemo.auth.presentation.timer.presentation.TimerScreen
+import com.jdacodes.mvicomposedemo.auth.presentation.timer.presentation.PomodoroScreen
+import com.jdacodes.mvicomposedemo.auth.presentation.timer.presentation.TimerViewModel
 import com.jdacodes.mvicomposedemo.navigation.util.DashboardRoute
 import com.jdacodes.mvicomposedemo.navigation.util.ProfileRoute
 import com.jdacodes.mvicomposedemo.navigation.util.TimerRoute
@@ -44,21 +47,23 @@ fun HomeNavGraph(
         }
 
         composable<TimerRoute> {
-            Box(
-                modifier = modifier,
-                contentAlignment = Alignment.Center
-            ) {
-                TimerScreen()
-            }
+            val timerViewModel: TimerViewModel = viewModel()
+            val timerState by timerViewModel.timerState.collectAsState()
+            PomodoroScreen(
+                timerViewModel = timerViewModel,
+                timerState = timerState,
+                onAction = timerViewModel::onAction,
+                uiEffect = timerViewModel.uiEffect
+            )
         }
 
-        composable<DashboardRoute> {
-            Box(
-                modifier = modifier,
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Dashboard")
+            composable<DashboardRoute> {
+                Box(
+                    modifier = modifier,
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Dashboard")
+                }
             }
         }
     }
-}
