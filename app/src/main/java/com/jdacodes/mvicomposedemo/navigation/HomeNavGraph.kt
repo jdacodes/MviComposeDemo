@@ -26,11 +26,12 @@ import org.koin.core.parameter.parametersOf
 fun HomeNavGraph(
     navController: NavHostController,
     rootNavController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    startDestination: Any = ProfileRoute
 ) {
     NavHost(
         navController = navController,
-        startDestination = ProfileRoute
+        startDestination = startDestination
     ) {
         composable<ProfileRoute> {
 
@@ -57,13 +58,13 @@ fun HomeNavGraph(
             )
         }
 
-            composable<DashboardRoute> {
-                Box(
-                    modifier = modifier,
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Dashboard")
-                }
+        composable<DashboardRoute> {
+            Box(
+                modifier = modifier,
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Dashboard")
             }
         }
     }
+}

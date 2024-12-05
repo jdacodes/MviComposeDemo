@@ -12,6 +12,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -21,7 +22,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.jdacodes.mvicomposedemo.navigation.util.DashboardRoute
+import com.jdacodes.mvicomposedemo.navigation.util.ProfileRoute
+import com.jdacodes.mvicomposedemo.navigation.util.TimerRoute
 
 
 @Composable
@@ -31,6 +36,17 @@ fun HomeScreen(
 ) {
     val navController = rememberNavController()
     var currentDestination by rememberSaveable { mutableStateOf(HomeDestinations.PROFILE) }
+    var startDestination: Any by remember { mutableStateOf(ProfileRoute) }
+
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentScreen = backStackEntry?.destination?.let {
+        when (it.route) {
+            HomeDestinations.PROFILE.route -> ProfileRoute
+            HomeDestinations.DASHBOARD.route -> DashboardRoute
+            HomeDestinations.TIMER.route -> TimerRoute
+            else -> ProfileRoute
+        }
+    }
 
     val windowSize = with(LocalDensity.current) {
         currentWindowSize().toSize().toDpSize()
@@ -57,7 +73,7 @@ fun HomeScreen(
             HomeDestinations.entries.forEach { destination ->
                 item(
                     icon = {
-                        if(destination == currentDestination){
+                        if (destination == currentDestination) {
                             Icon(
                                 destination.iconSelected,
                                 contentDescription = stringResource(destination.contentDescription)
@@ -75,6 +91,7 @@ fun HomeScreen(
                     onClick = {
                         navController.navigate(destination.route) {
                             currentDestination = destination
+//                            startDestination = currentDestination.route
                             // Pop up to the start destination of the graph to
                             // avoid building up a large stack of destinations
                             popUpTo(navController.graph.findStartDestination().id) {
@@ -91,7 +108,11 @@ fun HomeScreen(
         HomeNavGraph(
             navController = navController,
             rootNavController = rootNavController,
-            modifier = modifier
+            modifier = modifier,
+//            startDestination = currentDestination.route
+//            startDestination = startDestination
+            startDestination = currentScreen ?: ProfileRoute
+
         )
     }
 }
