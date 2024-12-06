@@ -1,4 +1,4 @@
-package com.jdacodes.mvicomposedemo.auth.presentation.timer.presentation
+package com.jdacodes.mvicomposedemo.timer.presentation
 
 sealed class TimerAction {
     data class StartTimer(val seconds: Long) : TimerAction()

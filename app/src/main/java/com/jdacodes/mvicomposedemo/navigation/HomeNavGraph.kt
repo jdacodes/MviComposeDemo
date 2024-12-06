@@ -1,5 +1,7 @@
 package com.jdacodes.mvicomposedemo.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,16 +14,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.jdacodes.mvicomposedemo.auth.presentation.timer.presentation.PomodoroScreen
-import com.jdacodes.mvicomposedemo.auth.presentation.timer.presentation.TimerViewModel
 import com.jdacodes.mvicomposedemo.navigation.util.DashboardRoute
 import com.jdacodes.mvicomposedemo.navigation.util.ProfileRoute
 import com.jdacodes.mvicomposedemo.navigation.util.TimerRoute
 import com.jdacodes.mvicomposedemo.profile.presentation.ProfileScreen
 import com.jdacodes.mvicomposedemo.profile.presentation.ProfileViewModel
+import com.jdacodes.mvicomposedemo.timer.presentation.PomodoroScreen
+import com.jdacodes.mvicomposedemo.timer.presentation.TimerViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeNavGraph(
     navController: NavHostController,
@@ -51,7 +54,6 @@ fun HomeNavGraph(
             val timerViewModel: TimerViewModel = viewModel()
             val timerState by timerViewModel.timerState.collectAsState()
             PomodoroScreen(
-                timerViewModel = timerViewModel,
                 timerState = timerState,
                 onAction = timerViewModel::onAction,
                 uiEffect = timerViewModel.uiEffect

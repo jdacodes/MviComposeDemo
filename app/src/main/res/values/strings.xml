@@ -3,4 +3,14 @@
     <string name="profile">Profile</string>
     <string name="pomodoro">Timer</string>
     <string name="dashboard">Dashboard</string>
+    <string name="channel_name">Pomodoro Timer</string>
+    <string name="channel_description">Notifications related to Pomodoro Timer</string>
+    <string name="pomodoro_timer">Pomodoro Timer</string>
+    <string name="timer_started">Timer started</string>
+    <string name="timer_stopped">Timer stopped</string>
+    <string name="timer_reset">Timer reset</string>
+    <string name="notification_permission_required">Notification Permission Required</string>
+    <string name="alertdialog_notification_content">Please enable notifications in app settings to receive updates.</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="cancel">Cancel</string>
 </resources>

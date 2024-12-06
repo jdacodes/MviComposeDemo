@@ -1,4 +1,4 @@
-package com.jdacodes.mvicomposedemo.auth.presentation.timer.presentation
+package com.jdacodes.mvicomposedemo.timer.presentation
 
 data class TimerState(
     val remainingSeconds: Long = 0L,

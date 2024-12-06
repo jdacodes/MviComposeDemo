@@ -1,7 +1,17 @@
-package com.jdacodes.mvicomposedemo.auth.presentation.timer.presentation
+package com.jdacodes.mvicomposedemo.timer.presentation
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,29 +34,77 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.jdacodes.mvicomposedemo.R
-import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.LoginUiEffect
 import com.jdacodes.mvicomposedemo.auth.util.Constants.POMODORO_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.auth.util.Constants.REST_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.auth.util.Constants.SECONDS_IN_A_MINUTE
+import com.jdacodes.mvicomposedemo.timer.util.showNotification
 import kotlinx.coroutines.flow.Flow
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PomodoroScreen(
-    timerViewModel: TimerViewModel,
     timerState: TimerState,
     onAction: (TimerAction) -> Unit,
     uiEffect: Flow<TimerUiEffect>,
 ) {
+    val context = LocalContext.current
+    var hasNotificationPermission by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS,
+                ) == PackageManager.PERMISSION_GRANTED &&
+                        NotificationManagerCompat.from(context).areNotificationsEnabled()
+            } else {
+                NotificationManagerCompat.from(context).areNotificationsEnabled()
+            }
+        )
+    }
+
+// State to show settings dialog
+    var showSettingsDialog by remember { mutableStateOf(false) }
+    //Activity Result Launcher instead of Accompanist Library
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            hasNotificationPermission = isGranted
+            //If both returned false, user has declined the permission permanently
+            //Redirect user to settings to enable notification to show notifications
+            if (!isGranted && !shouldShowRequestPermissionRationale(
+                    context as Activity,
+                    Manifest.permission.POST_NOTIFICATIONS
+                )
+            ) {
+                showSettingsDialog = true
+            }
+            //Explain why there is a need for permission
+        })
+    LaunchedEffect(true) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     val timerSeconds =
         if (timerState.lastTimer == TimerType.POMODORO)
             POMODORO_TIMER_SECONDS
@@ -56,7 +115,7 @@ fun PomodoroScreen(
         if (timerState.remainingSeconds == 0L)
             mediaPlayer.start()
     }
-    val context = LocalContext.current
+
     LaunchedEffect(true) {
         uiEffect.collect { effect ->
             when (effect) {
@@ -76,7 +135,7 @@ fun PomodoroScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Pomodoro Timer") },
+                title = { Text(stringResource(R.string.pomodoro_timer)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.primary
@@ -84,6 +143,30 @@ fun PomodoroScreen(
             )
         }
     ) { paddingValues ->
+        if (showSettingsDialog) {
+            AlertDialog(
+                onDismissRequest = { showSettingsDialog = false },
+                title = { Text(stringResource(R.string.notification_permission_required)) },
+                text = { Text(stringResource(R.string.alertdialog_notification_content)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        // Open app specific settings
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        val uri = Uri.fromParts("package", context.packageName, null)
+                        intent.data = uri
+                        context.startActivity(intent)
+                        showSettingsDialog = false
+                    }) {
+                        Text(stringResource(R.string.open_settings))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showSettingsDialog = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
         Box(
             modifier = Modifier
                 .padding(paddingValues)
@@ -125,8 +208,22 @@ fun PomodoroScreen(
                         onClick = {
                             if (timerState.isPaused) {
                                 onAction(TimerAction.StartTimer(timerState.remainingSeconds))
+                                if (hasNotificationPermission) {
+                                    showNotification(
+                                        context,
+                                        context.getString(R.string.pomodoro_timer),
+                                        context.getString(R.string.timer_started)
+                                    )
+                                }
                             } else {
                                 onAction(TimerAction.StopTimer)
+                                if (hasNotificationPermission) {
+                                    showNotification(
+                                        context,
+                                        context.getString(R.string.pomodoro_timer),
+                                        context.getString(R.string.timer_stopped)
+                                    )
+                                }
                             }
                         },
                     ) {
@@ -140,6 +237,13 @@ fun PomodoroScreen(
                         modifier = Modifier.padding(bottom = 8.dp),
                         onClick = {
                             onAction(TimerAction.ResetTimer(POMODORO_TIMER_SECONDS))
+                            if (hasNotificationPermission) {
+                                showNotification(
+                                    context,
+                                    context.getString(R.string.pomodoro_timer),
+                                    context.getString(R.string.timer_reset)
+                                )
+                            }
                         }
                     ) {
                         Icon(imageVector = Icons.Outlined.Refresh, contentDescription = null)

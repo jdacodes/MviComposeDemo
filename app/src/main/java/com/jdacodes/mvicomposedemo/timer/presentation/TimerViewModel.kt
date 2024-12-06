@@ -1,4 +1,4 @@
-package com.jdacodes.mvicomposedemo.auth.presentation.timer.presentation
+package com.jdacodes.mvicomposedemo.timer.presentation
 
 import android.os.CountDownTimer
 import androidx.lifecycle.ViewModel
@@ -91,7 +91,11 @@ class TimerViewModel() : ViewModel() {
                 pomodoroTimer?.start()
             } catch (e: Exception) {
                 Timber.e(e, "Error while starting timer")
-                viewModelScope.launch {  _uiEffect.send(TimerUiEffect.ShowToast(e.message ?: "Timer failed"))}
+                viewModelScope.launch {  _uiEffect.send(
+                    TimerUiEffect.ShowToast(
+                        e.message ?: "Timer failed"
+                    )
+                )}
 
             }
     }
