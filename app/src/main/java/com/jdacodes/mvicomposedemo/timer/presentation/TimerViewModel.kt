@@ -47,7 +47,11 @@ class TimerViewModel() : ViewModel() {
         Timber.d("startTimer: $seconds")
             try {
                 Timber.d("Sending UI Effect: Timer started")
-                viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Timer started")) }
+                if (_timerState.value.lastTimer == TimerType.POMODORO){
+                    viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Pomodoro started")) }
+                } else {
+                    viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Break started")) }
+                }
 
                 _timerState.update {
                     it.copy(
@@ -113,7 +117,12 @@ class TimerViewModel() : ViewModel() {
             )
         }
         pomodoroTimer?.cancel()
-        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Timer stopped")) }
+        if (_timerState.value.lastTimer == TimerType.POMODORO){
+            viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Pomodoro stopped")) }
+        } else {
+            viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Break stopped")) }
+        }
+//        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Timer stopped")) }
     }
 
     private fun resetTimer(seconds: Long) {
@@ -125,7 +134,12 @@ class TimerViewModel() : ViewModel() {
                 lastTimer = TimerType.POMODORO
             )
         }
-        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Timer reset")) }
+        if (_timerState.value.lastTimer == TimerType.POMODORO){
+            viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Pomodoro reset")) }
+        } else {
+            viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Break reset")) }
+        }
+//        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Timer reset")) }
     }
 
 }
