@@ -1,11 +1,17 @@
 package com.jdacodes.mvicomposedemo.timer.presentation
 
 import android.os.CountDownTimer
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jdacodes.mvicomposedemo.auth.util.Constants.LONG_BREAK_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.auth.util.Constants.MILLISECONDS_IN_A_SECOND
 import com.jdacodes.mvicomposedemo.auth.util.Constants.POMODORO_TIMER_SECONDS
-import com.jdacodes.mvicomposedemo.auth.util.Constants.REST_TIMER_SECONDS
+import com.jdacodes.mvicomposedemo.auth.util.Constants.SHORT_BREAK_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.timer.util.showNotification
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +25,8 @@ class TimerViewModel() : ViewModel() {
     private val _timerState = MutableStateFlow(TimerState())
     val timerState = _timerState.asStateFlow()
     private var pomodoroTimer: CountDownTimer? = null
+//    private var pomodoroCount = 0
+    private var pomodoroCount by mutableIntStateOf(0)
     private val _uiEffect = Channel<TimerUiEffect>()
     val uiEffect = _uiEffect.receiveAsFlow()
 
@@ -74,7 +82,6 @@ class TimerViewModel() : ViewModel() {
 
                     override fun onFinish() {
                         Timber.d("onFinish() - Timer finished")
-//                        viewModelScope.launch {  _uiEffect.send(TimerUiEffect.ShowToast("Timer finished"))}
                         pomodoroTimer?.cancel()
                         _timerState.update {
                             it.copy(
@@ -82,7 +89,11 @@ class TimerViewModel() : ViewModel() {
                                 remainingSeconds =
                                 if (it.lastTimer == TimerType.POMODORO) {
                                     viewModelScope.launch {  _uiEffect.send(TimerUiEffect.ShowToast("Pomodoro finished"))}
-                                    REST_TIMER_SECONDS
+                                    if (pomodoroCount != 0 && pomodoroCount % 4 == 0) {
+                                        LONG_BREAK_TIMER_SECONDS
+                                    } else {
+                                        SHORT_BREAK_TIMER_SECONDS
+                                    }
                                 }
                                 else {
                                     viewModelScope.launch {  _uiEffect.send(TimerUiEffect.ShowToast("Break finished"))}
@@ -92,7 +103,8 @@ class TimerViewModel() : ViewModel() {
                                 if (it.lastTimer == TimerType.POMODORO)
                                     TimerType.REST
                                 else
-                                    TimerType.POMODORO
+                                    TimerType.POMODORO,
+                                pomodoroCount = pomodoroCount++
                             )
                         }
                     }
@@ -122,7 +134,6 @@ class TimerViewModel() : ViewModel() {
         } else {
             viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Break stopped")) }
         }
-//        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Timer stopped")) }
     }
 
     private fun resetTimer(seconds: Long) {
@@ -139,7 +150,6 @@ class TimerViewModel() : ViewModel() {
         } else {
             viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Break reset")) }
         }
-//        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Timer reset")) }
     }
 
 }

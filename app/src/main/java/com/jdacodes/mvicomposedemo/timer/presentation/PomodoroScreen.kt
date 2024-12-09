@@ -52,11 +52,11 @@ import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.jdacodes.mvicomposedemo.R
+import com.jdacodes.mvicomposedemo.auth.util.Constants.LONG_BREAK_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.auth.util.Constants.POMODORO_TIMER_SECONDS
-import com.jdacodes.mvicomposedemo.auth.util.Constants.REST_TIMER_SECONDS
+import com.jdacodes.mvicomposedemo.auth.util.Constants.SHORT_BREAK_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.auth.util.Constants.SECONDS_IN_A_MINUTE
 import com.jdacodes.mvicomposedemo.timer.util.pad
-import com.jdacodes.mvicomposedemo.timer.util.showNotification
 import kotlinx.coroutines.flow.Flow
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -109,8 +109,12 @@ fun PomodoroScreen(
     val timerSeconds =
         if (timerState.lastTimer == TimerType.POMODORO)
             POMODORO_TIMER_SECONDS
-        else
-            REST_TIMER_SECONDS
+        else {
+            if (timerState.pomodoroCount % 4 == 0 && timerState.pomodoroCount != 0) {
+                LONG_BREAK_TIMER_SECONDS
+            } else
+                SHORT_BREAK_TIMER_SECONDS
+        }
     val mediaPlayer = MediaPlayer.create(LocalContext.current, R.raw.bell_sound)
     LaunchedEffect(key1 = timerState.remainingSeconds) {
         if (timerState.remainingSeconds == 0L)
