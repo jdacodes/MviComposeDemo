@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.jdacodes.mvicomposedemo.auth.util.Constants.MILLISECONDS_IN_A_SECOND
 import com.jdacodes.mvicomposedemo.auth.util.Constants.POMODORO_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.auth.util.Constants.REST_TIMER_SECONDS
+import com.jdacodes.mvicomposedemo.timer.util.showNotification
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,6 +39,7 @@ class TimerViewModel() : ViewModel() {
             }
             TimerAction.StopTimer -> stopTimer()
             is TimerAction.ResetTimer -> resetTimer(action.seconds)
+            is TimerAction.ShowNotification -> showNotification(action.context, action.title, action.content)
         }
     }
 
@@ -68,16 +70,20 @@ class TimerViewModel() : ViewModel() {
 
                     override fun onFinish() {
                         Timber.d("onFinish() - Timer finished")
-                        viewModelScope.launch {  _uiEffect.send(TimerUiEffect.ShowToast("Timer finished"))}
+//                        viewModelScope.launch {  _uiEffect.send(TimerUiEffect.ShowToast("Timer finished"))}
                         pomodoroTimer?.cancel()
                         _timerState.update {
                             it.copy(
                                 isPaused = true,
                                 remainingSeconds =
-                                if (it.lastTimer == TimerType.POMODORO)
+                                if (it.lastTimer == TimerType.POMODORO) {
+                                    viewModelScope.launch {  _uiEffect.send(TimerUiEffect.ShowToast("Pomodoro finished"))}
                                     REST_TIMER_SECONDS
-                                else
-                                    POMODORO_TIMER_SECONDS,
+                                }
+                                else {
+                                    viewModelScope.launch {  _uiEffect.send(TimerUiEffect.ShowToast("Break finished"))}
+                                    POMODORO_TIMER_SECONDS
+                                },
                                 lastTimer =
                                 if (it.lastTimer == TimerType.POMODORO)
                                     TimerType.REST

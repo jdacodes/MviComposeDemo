@@ -55,6 +55,7 @@ import com.jdacodes.mvicomposedemo.R
 import com.jdacodes.mvicomposedemo.auth.util.Constants.POMODORO_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.auth.util.Constants.REST_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.auth.util.Constants.SECONDS_IN_A_MINUTE
+import com.jdacodes.mvicomposedemo.timer.util.pad
 import com.jdacodes.mvicomposedemo.timer.util.showNotification
 import kotlinx.coroutines.flow.Flow
 
@@ -125,6 +126,13 @@ fun PomodoroScreen(
                         effect.message,
                         Toast.LENGTH_SHORT
                     ).show()
+                    if (hasNotificationPermission) {
+                        onAction(
+                            TimerAction.ShowNotification(
+                                context, context.getString(R.string.pomodoro_timer), effect.message
+                            )
+                        )
+                    }
                 }
                 // Remove navigation handling from here as it will be handled through state
                 else -> {}
@@ -195,7 +203,8 @@ fun PomodoroScreen(
                         trackColor = ProgressIndicatorDefaults.circularIndeterminateTrackColor,
                     )
                     Text(
-                        text = "Timer\n$minutes : $seconds",
+//                        text = "Timer\n$minutes : $seconds",
+                        text = "Timer\n${minutes.pad()} : ${seconds.pad()}",
                         modifier = Modifier.padding(bottom = 8.dp),
                         textAlign = TextAlign.Center
                     )
@@ -208,22 +217,8 @@ fun PomodoroScreen(
                         onClick = {
                             if (timerState.isPaused) {
                                 onAction(TimerAction.StartTimer(timerState.remainingSeconds))
-                                if (hasNotificationPermission) {
-                                    showNotification(
-                                        context,
-                                        context.getString(R.string.pomodoro_timer),
-                                        context.getString(R.string.timer_started)
-                                    )
-                                }
                             } else {
                                 onAction(TimerAction.StopTimer)
-                                if (hasNotificationPermission) {
-                                    showNotification(
-                                        context,
-                                        context.getString(R.string.pomodoro_timer),
-                                        context.getString(R.string.timer_stopped)
-                                    )
-                                }
                             }
                         },
                     ) {
@@ -237,13 +232,6 @@ fun PomodoroScreen(
                         modifier = Modifier.padding(bottom = 8.dp),
                         onClick = {
                             onAction(TimerAction.ResetTimer(POMODORO_TIMER_SECONDS))
-                            if (hasNotificationPermission) {
-                                showNotification(
-                                    context,
-                                    context.getString(R.string.pomodoro_timer),
-                                    context.getString(R.string.timer_reset)
-                                )
-                            }
                         }
                     ) {
                         Icon(imageVector = Icons.Outlined.Refresh, contentDescription = null)
