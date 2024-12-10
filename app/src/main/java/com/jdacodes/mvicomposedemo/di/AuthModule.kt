@@ -1,8 +1,10 @@
 package com.jdacodes.mvicomposedemo.di
 
 import androidx.navigation.NavController
+import androidx.room.Room
 import com.jdacodes.mvicomposedemo.BuildConfig
 import com.jdacodes.mvicomposedemo.auth.data.AuthenticationManager
+import com.jdacodes.mvicomposedemo.auth.data.local.UserDatabase
 import com.jdacodes.mvicomposedemo.auth.data.repository.AuthRepositoryImpl
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
 import com.jdacodes.mvicomposedemo.auth.presentation.forgot_password.ForgotPasswordViewModel
@@ -15,6 +17,24 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
+val databaseModule = module {
+    // Provide the Room database instance
+    single {
+        Room.databaseBuilder(
+            androidContext(),
+            UserDatabase::class.java,
+            "user_database"
+        )
+            .fallbackToDestructiveMigration() // Optional: handle migrations
+            .build()
+    }
+
+    // Provide the UserDao as a single instance
+    single {
+        get<UserDatabase>().userDao()
+    }
+}
+
 val authModule = module {
 
     single {
@@ -24,7 +44,10 @@ val authModule = module {
         )
     }
     single<AuthRepository> {
-        AuthRepositoryImpl(get())
+        AuthRepositoryImpl(
+            authenticationManager = get(),
+            userDao = get()
+        )
     }
 
 }

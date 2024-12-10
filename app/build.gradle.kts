@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.google.devtools.ksp)
 
 }
 
@@ -18,15 +19,24 @@ android {
         versionCode = 1
         versionName = "1.0"
         manifestPlaceholders["facebook_app_id"] = project.properties["facebook_app_id"] ?: ""
-        manifestPlaceholders["facebook_client_token"] = project.properties["facebook_client_token"] ?: ""
+        manifestPlaceholders["facebook_client_token"] =
+            project.properties["facebook_client_token"] ?: ""
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         debug {
-            buildConfigField("String", "CLIENT_TOKEN_FACEBOOK", "\"4aea8c1d2c71e37ab14ba42009f021ca\"")
+            buildConfigField(
+                "String",
+                "CLIENT_TOKEN_FACEBOOK",
+                "\"4aea8c1d2c71e37ab14ba42009f021ca\""
+            )
             buildConfigField("String", "APP_ID_FACEBOOK", "\"1082904020000792\"")
-            buildConfigField("String", "WEB_CLIENT_ID_FIREBASE", "\"287275380843-o1jddct5j9bhvm1jgd36kaetrjui1uta.apps.googleusercontent.com\"")
+            buildConfigField(
+                "String",
+                "WEB_CLIENT_ID_FIREBASE",
+                "\"287275380843-o1jddct5j9bhvm1jgd36kaetrjui1uta.apps.googleusercontent.com\""
+            )
         }
         release {
             isMinifyEnabled = false
@@ -35,9 +45,17 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("debug")
-            buildConfigField("String", "CLIENT_TOKEN_FACEBOOK", "\"4aea8c1d2c71e37ab14ba42009f021ca\"")
+            buildConfigField(
+                "String",
+                "CLIENT_TOKEN_FACEBOOK",
+                "\"4aea8c1d2c71e37ab14ba42009f021ca\""
+            )
             buildConfigField("String", "APP_ID_FACEBOOK", "\"1082904020000792\"")
-            buildConfigField("String", "WEB_CLIENT_ID_FIREBASE", "\"287275380843-o1jddct5j9bhvm1jgd36kaetrjui1uta.apps.googleusercontent.com\"")
+            buildConfigField(
+                "String",
+                "WEB_CLIENT_ID_FIREBASE",
+                "\"287275380843-o1jddct5j9bhvm1jgd36kaetrjui1uta.apps.googleusercontent.com\""
+            )
         }
     }
     compileOptions {
@@ -54,6 +72,11 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    annotationProcessor(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+    testImplementation(libs.androidx.room.roomtesting)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.material3.adaptive)
     implementation(libs.androidx.material3.adaptive.navigation.suite)

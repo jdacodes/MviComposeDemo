@@ -5,14 +5,22 @@ import com.facebook.AccessToken
 import com.jdacodes.mvicomposedemo.auth.data.AuthError
 import com.jdacodes.mvicomposedemo.auth.data.AuthResponse
 import com.jdacodes.mvicomposedemo.auth.data.AuthenticationManager
+import com.jdacodes.mvicomposedemo.auth.data.local.UserDao
 import com.jdacodes.mvicomposedemo.auth.domain.model.User
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
+import com.jdacodes.mvicomposedemo.auth.util.toDomainUser
+import com.jdacodes.mvicomposedemo.auth.util.toUserEntity
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import timber.log.Timber
 import kotlin.coroutines.cancellation.CancellationException
 
-class AuthRepositoryImpl(private val authenticationManager: AuthenticationManager) :
+class AuthRepositoryImpl(
+    private val authenticationManager: AuthenticationManager,
+    private val userDao: UserDao
+) :
     AuthRepository {
     override suspend fun login(context: Context, email: String, password: String): User {
         return try {
@@ -20,11 +28,15 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
                 .map { response ->
                     when (response) {
                         is AuthResponse.Success -> {
-                            User(
+                            val user = User(
                                 id = response.data.id ?: "",
                                 email = response.data.email ?: "",
-                                username = response.data.username ?: "",
+                                displayName = response.data.displayName ?: "",
                             )
+                            // Convert to UserEntity and save to Room
+                            val userEntity = user.toUserEntity(isLoggedIn = true)
+                            userDao.insertUser(userEntity)
+                            user
                         }
 
                         is AuthResponse.Error -> {
@@ -128,7 +140,10 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
                 .map { response ->
                     when (response) {
                         is AuthResponse.Success -> {
-                            response.data
+                            val user = response.data
+                            val userEntity = user.toUserEntity(isLoggedIn = true)
+                            userDao.insertUser(userEntity)
+                            user
                         }
 
                         is AuthResponse.Error -> {
@@ -173,11 +188,14 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
                 .map { response ->
                     when (response) {
                         is AuthResponse.Success -> {
-                            User(
+                            val user = User(
                                 id = response.data.id ?: "",
                                 email = response.data.email ?: "",
-                                username = response.data.username ?: "",
+                                displayName = response.data.displayName ?: "",
                             )
+                            val userEntity = user.toUserEntity(isLoggedIn = true)
+                            userDao.insertUser(userEntity)
+                            user
                         }
 
                         is AuthResponse.Error -> {
@@ -264,39 +282,56 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
 
     }
 
-    override suspend fun getCurrentUser(): User? {
-        return try {
-            val response = authenticationManager.getCurrentUser()
-            when (response) {
-                is AuthResponse.Success -> {
-                    response.data
-                }
-
-                is AuthResponse.Error -> {
-                    when (response.error) {
-
-                        AuthError.Unknown -> {
-                            Timber.e("Unexpected error getting your account")
-                            throw UnknownAuthException("Unexpected error getting your account")
+    override fun getCurrentUser(): Flow<User?> =
+        flow {
+            try {
+                val response = authenticationManager.getCurrentUser()
+                val localUser = userDao.getLoggedInUser()?.toDomainUser()
+                when (response) {
+                    is AuthResponse.Success -> {
+                        val responseUser = response.data
+                        // If response user is different from local user, update local user
+                        if (responseUser != null && (localUser == null || localUser.id != responseUser.id)) {
+                            // Convert and insert the new user
+                            val userEntity = responseUser.toUserEntity(isLoggedIn = true)
+                            userDao.clearUsers() // Clear previous logged-in users
+                            userDao.insertUser(userEntity)
                         }
 
-                        else -> {
-                            Timber.e("Unexpected error getting your account")
-                            throw UnknownAuthException("Unexpected error getting your account")
-                        }
+                        // Always emit the latest user (from response or updated local)
+                        emit(responseUser ?: localUser)
                     }
 
+                    is AuthResponse.Error -> {
+                        emit(localUser)
+                        when (response.error) {
+
+                            AuthError.Unknown -> {
+                                Timber.e("Unexpected error getting your account")
+                                throw UnknownAuthException("Unexpected error getting your account")
+                            }
+
+                            else -> {
+                                Timber.e("Unexpected error getting your account")
+                                throw UnknownAuthException("Unexpected error getting your account")
+                            }
+                        }
+
+                    }
                 }
+            } catch (e: Exception) {
+                // Handle unexpected exceptions
+                val localUser = userDao.getLoggedInUser()?.toDomainUser()
+                emit(localUser)
+                Timber.e(e, "Unexpected error during get user reset")
+                if (e is CancellationException) throw e else throw UnknownAuthException(
+                    "Unexpected error",
+                    e
+                )
+
             }
-        } catch (e: Exception) {
-            // Handle unexpected exceptions
-            Timber.e(e, "Unexpected error during get user reset")
-            if (e is CancellationException) throw e else throw UnknownAuthException(
-                "Unexpected error",
-                e
-            )
         }
-    }
+
 
     override suspend fun signOutUser(): Boolean {
         return try {
@@ -304,6 +339,7 @@ class AuthRepositoryImpl(private val authenticationManager: AuthenticationManage
             when (response) {
                 is AuthResponse.Success -> {
                     Timber.d("User sign-out successful")
+                    userDao.clearUsers()
                     true
                 }
 

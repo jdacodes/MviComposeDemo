@@ -14,7 +14,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -116,7 +115,7 @@ private fun ProfileContent(
         ) {
             Text("ID: ${user?.id}", style = MaterialTheme.typography.bodyMedium)
             Text("Email: ${user?.email}", style = MaterialTheme.typography.bodyMedium)
-            Text("Display name: ${user?.username}", style = MaterialTheme.typography.bodyMedium)
+            Text("Display name: ${user?.displayName}", style = MaterialTheme.typography.bodyMedium)
             Box(modifier = Modifier.fillMaxWidth()) {
                 Button(
                     onClick = { onAction(ProfileAction.DisplayUserDetails) },

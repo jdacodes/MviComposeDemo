@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.facebook.AccessToken
+import com.jdacodes.mvicomposedemo.auth.domain.model.User
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
 import com.jdacodes.mvicomposedemo.auth.presentation.states.AuthState
 import com.jdacodes.mvicomposedemo.auth.presentation.states.LoginState
@@ -13,9 +14,11 @@ import com.jdacodes.mvicomposedemo.navigation.util.navigateLoginToHomeGraph
 import com.jdacodes.mvicomposedemo.navigation.util.navigateLoginToSignUpRoute
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
@@ -30,6 +33,14 @@ class LoginViewModel(
 
     // Store the last valid form state
     private var lastFormState: LoginState? = null
+
+    // Expose the current user as a StateFlow
+    val currentUser: StateFlow<User?> = authRepository.getCurrentUser()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            null
+        )
 
     fun onAction(action: LoginAction) {
         when (action) {

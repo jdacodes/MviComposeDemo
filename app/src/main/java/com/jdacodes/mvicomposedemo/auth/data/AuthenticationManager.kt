@@ -65,7 +65,7 @@ class AuthenticationManager(
                                 User(
                                     id = task.result.user?.uid ?: "",
                                     email = task.result.user?.email ?: "",
-                                    username = task.result.user?.displayName ?: "",
+                                    displayName = task.result.user?.displayName ?: "",
                                 )
                             )
                         )
@@ -242,6 +242,6 @@ fun firebaseUserToUser(firebaseUser: FirebaseUser?): User {
     return User(
         id = firebaseUser?.uid ?: "",
         email = firebaseUser?.email ?: "",
-        username = firebaseUser?.displayName ?: ""
+        displayName = firebaseUser?.displayName ?: ""
     )
 }

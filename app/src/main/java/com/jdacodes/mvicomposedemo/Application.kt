@@ -9,6 +9,7 @@ import com.facebook.FacebookSdk
 import com.facebook.appevents.AppEventsLogger
 import com.jdacodes.mvicomposedemo.core.util.CHANNEL_ID
 import com.jdacodes.mvicomposedemo.di.authModule
+import com.jdacodes.mvicomposedemo.di.databaseModule
 import com.jdacodes.mvicomposedemo.di.navigationModule
 import com.jdacodes.mvicomposedemo.di.profileModule
 import org.koin.android.ext.koin.androidContext
@@ -40,7 +41,7 @@ class Application : Application() {
         startKoin {
             androidContext(this@Application)
             androidLogger()
-            modules(authModule, profileModule, navigationModule)
+            modules(authModule, profileModule, navigationModule, databaseModule)
         }
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())

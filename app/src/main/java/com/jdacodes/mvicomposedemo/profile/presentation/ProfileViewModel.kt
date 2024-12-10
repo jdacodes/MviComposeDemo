@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -27,7 +28,7 @@ class ProfileViewModel(
         when (action) {
             ProfileAction.DisplayUserDetails -> getCurrentUser()
             ProfileAction.SignOut -> signOutUser()
-             is ProfileAction.NavigateToAuth -> {
+            is ProfileAction.NavigateToAuth -> {
                 navigator.navigateProfileToAuthGraph(action.navController)
             }
         }
@@ -36,14 +37,19 @@ class ProfileViewModel(
     private fun getCurrentUser() {
         viewModelScope.launch {
             _state.value = ProfileState.Loading // Set loading state
-            try {
-                val result = authRepository.getCurrentUser() // Fetch user details
-                _state.value = ProfileState.Success(result) // Update state with success
-                _effect.send(ProfileUiEffect.ShowToast("User details loaded successfully"))
-            } catch (e: Exception) {
-                // Handle error, e.g., send an effect to show an error message
-                _effect.send(ProfileUiEffect.ShowToast("Error loading user details"))
-            }
+            authRepository.getCurrentUser()
+                .catch { e ->
+//                    _state.value = ProfileState.Error(e.message ?: "Unknown error")
+                    _effect.send(ProfileUiEffect.ShowToast("Error loading user details"))
+                }
+                .collect { user ->
+                    _state.value = ProfileState.Success(user)
+                    if (user != null) {
+                        _effect.send(ProfileUiEffect.ShowToast("User details loaded successfully"))
+                    } else {
+                        _effect.send(ProfileUiEffect.ShowToast("No user found"))
+                    }
+                }
         }
     }
 
@@ -52,7 +58,7 @@ class ProfileViewModel(
             _state.value = ProfileState.Loading
             try {
                 val result = authRepository.signOutUser()
-                if (result){
+                if (result) {
                     _effect.send(ProfileUiEffect.Navigate)
                     _effect.send(ProfileUiEffect.ShowToast("User signed out successfully"))
                 } else {
@@ -60,7 +66,7 @@ class ProfileViewModel(
                 }
 
 
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 _effect.send(ProfileUiEffect.ShowToast("Error signing out"))
             }
         }
