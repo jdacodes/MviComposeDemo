@@ -13,6 +13,8 @@ import com.jdacodes.mvicomposedemo.auth.presentation.sign_up.SignUpViewModel
 import com.jdacodes.mvicomposedemo.navigation.util.Navigator
 import com.jdacodes.mvicomposedemo.navigation.util.AppNavigator
 import com.jdacodes.mvicomposedemo.profile.presentation.ProfileViewModel
+import com.jdacodes.mvicomposedemo.timer.data.remote.StorageServiceImpl
+import com.jdacodes.mvicomposedemo.timer.domain.StorageService
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -48,6 +50,10 @@ val authModule = module {
             authenticationManager = get(),
             userDao = get()
         )
+    }
+
+    single<StorageService>{
+        StorageServiceImpl()
     }
 
 }

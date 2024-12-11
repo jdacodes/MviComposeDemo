@@ -1,5 +1,7 @@
 package com.jdacodes.mvicomposedemo.navigation
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,6 +31,7 @@ import com.jdacodes.mvicomposedemo.navigation.util.ProfileRoute
 import com.jdacodes.mvicomposedemo.navigation.util.TimerRoute
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(
     rootNavController: NavHostController,

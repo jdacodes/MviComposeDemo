@@ -20,8 +20,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class AuthRepositoryImpl(
     private val authenticationManager: AuthenticationManager,
     private val userDao: UserDao
-) :
-    AuthRepository {
+) : AuthRepository {
     override suspend fun login(context: Context, email: String, password: String): User {
         return try {
             authenticationManager.loginWithEmail(email, password)

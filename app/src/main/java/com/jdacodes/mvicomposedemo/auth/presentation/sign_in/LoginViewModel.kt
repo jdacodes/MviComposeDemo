@@ -34,6 +34,7 @@ class LoginViewModel(
     // Store the last valid form state
     private var lastFormState: LoginState? = null
 
+    // TODO: Use currentUser to check the user if it is logged in or not, navigate accordingly
     // Expose the current user as a StateFlow
     val currentUser: StateFlow<User?> = authRepository.getCurrentUser()
         .stateIn(

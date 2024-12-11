@@ -19,6 +19,7 @@ import com.jdacodes.mvicomposedemo.navigation.util.ProfileRoute
 import com.jdacodes.mvicomposedemo.navigation.util.TimerRoute
 import com.jdacodes.mvicomposedemo.profile.presentation.ProfileScreen
 import com.jdacodes.mvicomposedemo.profile.presentation.ProfileViewModel
+import com.jdacodes.mvicomposedemo.timer.domain.StorageService
 import com.jdacodes.mvicomposedemo.timer.presentation.PomodoroScreen
 import com.jdacodes.mvicomposedemo.timer.presentation.TimerViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -51,7 +52,8 @@ fun HomeNavGraph(
         }
 
         composable<TimerRoute> {
-            val timerViewModel: TimerViewModel = viewModel()
+//            val timerViewModel: TimerViewModel = viewModel()
+            val timerViewModel: TimerViewModel = koinViewModel()
             val timerState by timerViewModel.timerState.collectAsState()
             PomodoroScreen(
                 timerState = timerState,
