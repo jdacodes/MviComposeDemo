@@ -37,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,8 +55,8 @@ import androidx.core.content.ContextCompat
 import com.jdacodes.mvicomposedemo.R
 import com.jdacodes.mvicomposedemo.auth.util.Constants.LONG_BREAK_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.auth.util.Constants.POMODORO_TIMER_SECONDS
-import com.jdacodes.mvicomposedemo.auth.util.Constants.SHORT_BREAK_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.auth.util.Constants.SECONDS_IN_A_MINUTE
+import com.jdacodes.mvicomposedemo.auth.util.Constants.SHORT_BREAK_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.timer.util.pad
 import kotlinx.coroutines.flow.Flow
 
@@ -66,6 +67,7 @@ fun PomodoroScreen(
     timerState: TimerState,
     onAction: (TimerAction) -> Unit,
     uiEffect: Flow<TimerUiEffect>,
+    viewModel: TimerViewModel,
 ) {
     val context = LocalContext.current
     var hasNotificationPermission by remember {
@@ -143,7 +145,10 @@ fun PomodoroScreen(
             }
         }
     }
-
+    DisposableEffect(viewModel) {
+        viewModel.addListener()
+        onDispose { viewModel.removeListener() }
+    }
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(

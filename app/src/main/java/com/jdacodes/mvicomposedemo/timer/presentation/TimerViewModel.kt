@@ -1,5 +1,6 @@
 package com.jdacodes.mvicomposedemo.timer.presentation
 
+import android.annotation.SuppressLint
 import android.os.CountDownTimer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -26,6 +27,10 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class TimerViewModel(
     private val storageService: StorageService,
@@ -39,6 +44,7 @@ class TimerViewModel(
     val uiEffect = _uiEffect.receiveAsFlow()
     val sessions = mutableStateMapOf<String, Session>()
     private var userId by mutableStateOf("")
+    private var currentSession: Session? = null
 
     init {
         getUserId()
@@ -99,27 +105,42 @@ class TimerViewModel(
                 override fun onFinish() {
                     Timber.d("onFinish() - Timer finished")
                     pomodoroTimer?.cancel()
+
+                    val currentTimerType = _timerState.value.lastTimer // Get current timer type
+
+                    if (currentTimerType == TimerType.POMODORO) { // Check if it was a Pomodoro that finished
+                        pomodoroCount++ // Increment BEFORE saving the session
+                        onPomodoroFinished() // Save the session immediately
+                        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Pomodoro finished")) }
+
+                    } else if (currentTimerType == TimerType.SHORT_BREAK) {
+                        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Short Break finished")) }
+                    } else {
+                        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Long Break finished")) }
+                    }
+
+                    val nextTimerType = when (currentTimerType) { // Determine the next timer type
+                        TimerType.POMODORO -> {
+                            if (pomodoroCount % 4 == 0) {
+                                TimerType.LONG_BREAK
+                            } else {
+                                TimerType.SHORT_BREAK
+                            }
+                        }
+
+                        TimerType.SHORT_BREAK, TimerType.LONG_BREAK -> TimerType.POMODORO
+                    }
+
                     _timerState.update {
                         it.copy(
                             isPaused = true,
-                            remainingSeconds =
-                            if (it.lastTimer == TimerType.POMODORO) {
-                                viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Pomodoro finished")) }
-                                if (pomodoroCount != 0 && pomodoroCount % 4 == 0) {
-                                    LONG_BREAK_TIMER_SECONDS
-                                } else {
-                                    SHORT_BREAK_TIMER_SECONDS
-                                }
-                            } else {
-                                viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Break finished")) }
-                                POMODORO_TIMER_SECONDS
+                            remainingSeconds = when (nextTimerType) {
+                                TimerType.POMODORO -> POMODORO_TIMER_SECONDS
+                                TimerType.SHORT_BREAK -> SHORT_BREAK_TIMER_SECONDS
+                                TimerType.LONG_BREAK -> LONG_BREAK_TIMER_SECONDS
                             },
-                            lastTimer =
-                            if (it.lastTimer == TimerType.POMODORO)
-                                TimerType.REST
-                            else
-                                TimerType.POMODORO,
-                            pomodoroCount = pomodoroCount++
+                            lastTimer = nextTimerType,
+                            pomodoroCount = pomodoroCount // Update the state with the correct count
                         )
                     }
                     Timber.d("Pomodoro count Int State: $pomodoroCount")
@@ -183,6 +204,7 @@ class TimerViewModel(
                         _uiEffect.send(TimerUiEffect.ShowToast("User is not null"))
                         Timber.d("User id: ${user.id}")
                         userId = user.id
+                        loadSession(user.id)
                     } else {
                         Timber.d("User is null")
                     }
@@ -217,17 +239,52 @@ class TimerViewModel(
         }
     }
 
-    fun saveSession(session: Session) {
-        viewModelScope.launch(showErrorExceptionHandler) {
-            storageService.saveSession(session) { error ->
-                if (error != null) {
-                    Timber.e(error.message ?: "Error saving session")
-                    onError(error)
+    private fun loadSession(userId: String) {
+        viewModelScope.launch {
+            storageService.getSessionsByUserId(userId, onSuccess = { sessions ->
+                currentSession = if (sessions.isNotEmpty()) {
+                    sessions.last().copy(userId = userId)
+                } else {
+                    Session(userId = userId)
                 }
-                viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Session saved")) }
+                saveSession()
+            }, onError = {
+                Timber.e(it)
+            })
+        }
+    }
+
+    private fun saveSession() {
+        currentSession?.let { session ->
+            viewModelScope.launch(showErrorExceptionHandler) {
+                storageService.saveSession(session) { error, newSessionId ->
+                    if (error != null) {
+                        Timber.e(error.message ?: "Error saving session")
+                        onError(error)
+                        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Error saving session")) }
+                    } else {
+                        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Session saved")) }
+                        sessions[newSessionId!!] = session.copy(id = newSessionId)
+                    }
+                }
             }
         }
     }
+
+    @SuppressLint("NewApi")
+    private fun onPomodoroFinished() {
+        val currentTime = ZonedDateTime.now(ZoneId.of("UTC"))
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val formattedTime = currentTime.format(formatter)
+
+        currentSession = currentSession?.copy(
+            pomodoro = pomodoroCount,
+            timeStarted = formattedTime
+        ) ?: Session(userId = userId, pomodoro = pomodoroCount, timeStarted = formattedTime)
+
+        saveSession()
+    }
+
 
     private fun onDocumentEvent(wasDocumentDeleted: Boolean, session: Session) {
         if (wasDocumentDeleted) sessions.remove(session.id) else sessions[session.id] = session

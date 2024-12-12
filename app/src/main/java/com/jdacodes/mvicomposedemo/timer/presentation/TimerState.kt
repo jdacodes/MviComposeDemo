@@ -6,7 +6,9 @@ data class TimerState(
     val lastTimer: TimerType = TimerType.POMODORO,
     val pomodoroCount: Int = 0,
 )
+
 enum class TimerType {
     POMODORO,
-    REST,
+    SHORT_BREAK,
+    LONG_BREAK
 }

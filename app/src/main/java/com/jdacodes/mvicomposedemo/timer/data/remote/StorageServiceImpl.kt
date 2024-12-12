@@ -3,7 +3,6 @@ package com.jdacodes.mvicomposedemo.timer.data.remote
 import com.google.firebase.firestore.DocumentChange.Type.REMOVED
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.firestore.toObject
 import com.google.firebase.ktx.Firebase
 import com.jdacodes.mvicomposedemo.timer.domain.StorageService
 import com.jdacodes.mvicomposedemo.timer.domain.model.Session
@@ -44,16 +43,44 @@ class StorageServiceImpl : StorageService {
             .get()
             .addOnFailureListener { error -> onError(error) }
             .addOnSuccessListener { result ->
-                val session = result.toObject<Session>()?.copy(id = result.id)
+//                val session = result.toObject<Session>()?.copy(id = result.id)
+                val session = result.toObject(Session::class.java)
                 onSuccess(session ?: Session())
             }
     }
 
-    override fun saveSession(session: Session, onResult: (Throwable?) -> Unit) {
-        Firebase.firestore
-            .collection(SESSION_COLLECTION)
-            .add(session)
-            .addOnCompleteListener { onResult(it.exception) }
+    override fun getSessionsByUserId(
+        userId: String,
+        onSuccess: (List<Session>) -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        Firebase.firestore.collection(SESSION_COLLECTION)
+            .whereEqualTo("userId", userId)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                val sessions = querySnapshot.documents.mapNotNull { document ->
+                    document.toObject(Session::class.java)
+                }
+                onSuccess(sessions)
+            }
+            .addOnFailureListener { exception -> onError(exception) }
+    }
+
+    override fun saveSession(session: Session, onResult: (Throwable?, String?) -> Unit) {
+        val collection = Firebase.firestore.collection(SESSION_COLLECTION)
+        val documentRef =
+            if (session.id.isNotEmpty()) collection.document(session.id) else collection.document()
+        val newSessionId = documentRef.id
+        val updatedSession = session.copy(id = newSessionId)
+
+        documentRef.set(updatedSession)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    onResult(null, newSessionId)
+                } else {
+                    onResult(task.exception, null)
+                }
+            }
     }
 
     override fun updateSession(session: Session, onResult: (Throwable?) -> Unit) {
