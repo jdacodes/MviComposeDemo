@@ -14,7 +14,7 @@ import com.jdacodes.mvicomposedemo.auth.util.Constants.LONG_BREAK_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.auth.util.Constants.MILLISECONDS_IN_A_SECOND
 import com.jdacodes.mvicomposedemo.auth.util.Constants.POMODORO_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.auth.util.Constants.SHORT_BREAK_TIMER_SECONDS
-import com.jdacodes.mvicomposedemo.timer.domain.StorageService
+import com.jdacodes.mvicomposedemo.timer.domain.StorageRepository
 import com.jdacodes.mvicomposedemo.timer.domain.model.Session
 import com.jdacodes.mvicomposedemo.timer.util.ErrorHandlers.onError
 import com.jdacodes.mvicomposedemo.timer.util.ErrorHandlers.showErrorExceptionHandler
@@ -33,7 +33,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class TimerViewModel(
-    private val storageRepository: StorageService,
+    private val storageRepository: StorageRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
     private val _timerState = MutableStateFlow(TimerState())
@@ -42,7 +42,7 @@ class TimerViewModel(
     private var pomodoroCount by mutableIntStateOf(0)
     private val _uiEffect = Channel<TimerUiEffect>()
     val uiEffect = _uiEffect.receiveAsFlow()
-    val sessions = mutableStateMapOf<String, Session>()
+    var sessions = mutableStateMapOf<String, Session>()
     private var userId by mutableStateOf("")
     private var currentSession: Session? = null
 
@@ -231,47 +231,58 @@ class TimerViewModel(
         }
     }
 
-    fun updateSession(session: Session) {
-        viewModelScope.launch(showErrorExceptionHandler) {
-            val updatedSession = session.copy(completed = !session.completed)
-            storageRepository.updateSession(updatedSession) { error ->
-                if (error != null) {
-                    Timber.e(error.message ?: "Error updating session")
-                    onError(error)
-                }
-                viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Session updated")) }
-                Timber.d("Session updated successfully")
-            }
-        }
-    }
+//    fun updateSession(session: Session) {
+//        viewModelScope.launch(showErrorExceptionHandler) {
+//            val updatedSession = session.copy(completed = !session.completed)
+//            storageRepository.updateSession(updatedSession) { error ->
+//                if (error != null) {
+//                    Timber.e(error.message ?: "Error updating session")
+//                    onError(error)
+//                }
+//                viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Session updated")) }
+//                Timber.d("Session updated successfully")
+//            }
+//        }
+//    }
 
     private fun loadSession(userId: String) {
-        viewModelScope.launch {
-            storageRepository.getSessionsByUserId(userId, onSuccess = { sessions ->
+        viewModelScope.launch(showErrorExceptionHandler) {
+            try {
+                val sessions = storageRepository.getSessionsByUserId(userId)
+                Timber.d("Loaded ${sessions.size} sessions for user $userId")
+
+                // Update UI state or perform further actions
+//                sessions = sessions
                 currentSession = if (sessions.isNotEmpty()) {
-                    sessions.last().copy(userId = userId)
+                 sessions.last().copy(userId = userId)
                 } else {
                     Session(userId = userId)
                 }
                 saveSession()
-            }, onError = {
-                Timber.e(it)
-            })
+//                if (sessions.isEmpty()) {
+//                    _uiEffect.send(TimerUiEffect.ShowToast("No sessions found"))
+//                }
+            }catch (e: Exception) {
+                Timber.e("Error loading sessions: ${e.message}")
+                _uiEffect.send(TimerUiEffect.ShowToast("Failed to load sessions"))
+            }
         }
     }
 
     private fun saveSession() {
         currentSession?.let { session ->
             viewModelScope.launch(showErrorExceptionHandler) {
-                storageRepository.saveSession(session) { error, newSessionId ->
-                    if (error != null) {
-                        Timber.e(error.message ?: "Error saving session")
-                        onError(error)
-                        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Error saving session")) }
-                    } else {
-                        viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Session saved")) }
-                        sessions[newSessionId!!] = session.copy(id = newSessionId)
-                    }
+                try {
+                    val newSessionId = storageRepository.saveSession(session)
+                    Timber.d("Session saved with ID: $newSessionId")
+                    _uiEffect.send(TimerUiEffect.ShowToast("Session saved"))
+                    sessions[newSessionId] = session.copy(id = newSessionId)
+
+                } catch (e: Exception) {
+                    // Error handling
+                    Timber.e(e.message ?: "Error saving session")
+                    onError(e)
+                    _uiEffect.send(TimerUiEffect.ShowToast("Error saving session"))
                 }
             }
         }

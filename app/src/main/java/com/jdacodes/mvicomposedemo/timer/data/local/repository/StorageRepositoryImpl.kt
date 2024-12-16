@@ -5,9 +5,8 @@ import com.jdacodes.mvicomposedemo.timer.data.local.entity.SessionEntity
 import com.jdacodes.mvicomposedemo.timer.domain.StorageRepository
 import com.jdacodes.mvicomposedemo.timer.domain.StorageService
 import com.jdacodes.mvicomposedemo.timer.domain.model.Session
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 class StorageRepositoryImpl(
@@ -28,43 +27,67 @@ class StorageRepositoryImpl(
         storageService.removeListener()
     }
 
-    override suspend fun saveSession(session: Session) {
-        // Save to Firestore and local database
-        storageService.saveSession(session) { error, newSessionId ->
-            if (error == null && newSessionId != null) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    Timber.d("Saving session to local database: $session")
-                    storageDao.saveSession(SessionEntity.fromDomain(session.copy(id = newSessionId)))
-                }
-            }
+override suspend fun saveSession(session: Session): String = withContext(Dispatchers.IO) {
+    try {
+        // First, save to Firestore
+        val newSessionId = storageService.saveSessionAsync(session)
+
+        // Then save to local database
+        val sessionToSave = session.copy(id = newSessionId)
+        storageDao.saveSession(SessionEntity.fromDomain(sessionToSave))
+        newSessionId
+    } catch (e: Exception) {
+        // Handle any errors that might occur during the process
+        Timber.e("StorageRepositoryImpl:Error saving session $e")
+        throw e
+    }
+}
+
+    override suspend fun updateSession(session: Session) = withContext(Dispatchers.IO) {
+        try {
+            // First, update in Firestore
+            storageService.updateSessionAsync(session)
+
+            // Then update in local database
+            storageDao.updateSession(SessionEntity.fromDomain(session))
+        } catch (e: Exception) {
+            throw e
         }
     }
 
-    override suspend fun updateSession(session: Session) {
-        storageService.updateSession(session) { error ->
-            if (error == null) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    Timber.d("Updating session in local database: $session")
-                    storageDao.updateSession(SessionEntity.fromDomain(session))
-                }
-            }
+    override suspend fun deleteSession(sessionId: String) = withContext(Dispatchers.IO) {
+        try {
+            // First, delete from Firestore
+            storageService.deleteSessionAsync(sessionId)
+
+            // Then delete from local database
+            storageDao.deleteSession(sessionId)
+        } catch (e: Exception) {
+            throw e
         }
     }
 
-    override suspend fun deleteSession(sessionId: String) {
-        storageService.deleteSession(sessionId) { error ->
-            if (error == null) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    Timber.d("Deleting session from local database: $sessionId")
-                    storageDao.deleteSession(sessionId)
-                }
-            }
-        }
-    }
+    override suspend fun getSessionsByUserId(userId: String): List<Session> = withContext(Dispatchers.IO) {
+        try {
+            // First, try to fetch from remote service
+            val remoteSessions = storageService.getSessionsByUserIdAsync(userId)
 
-    override suspend fun getSessionsByUserId(userId: String): List<Session> {
-        Timber.d("Getting sessions for user ID: $userId")
-        return storageDao.getSessionsByUserId(userId).map { it.toDomain() }
+            // If remote fetch is successful, update local database
+            if (remoteSessions.isNotEmpty()) {
+                // Convert and save to local database
+                val sessionEntities = remoteSessions.map { SessionEntity.fromDomain(it) }
+                storageDao.deleteAllSessions() // Optional: clear existing local sessions
+                storageDao.insertSessions(sessionEntities)
+            }
+
+            // Fetch and return from local database (which now includes remote data)
+            storageDao.getSessionsByUserId(userId).map { it.toDomain() }
+        } catch (e: Exception) {
+            Timber.e("Error fetching sessions for user $userId: ${e.message}")
+
+            // Fallback to local database if remote fetch fails
+            storageDao.getSessionsByUserId(userId).map { it.toDomain() }
+        }
     }
 
     override suspend fun getSession(sessionId: String): Session? {

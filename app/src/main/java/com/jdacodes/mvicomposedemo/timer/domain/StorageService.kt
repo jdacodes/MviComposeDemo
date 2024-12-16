@@ -11,14 +11,9 @@ interface StorageService {
 
     fun removeListener()
     fun getSession(id: String, onSuccess: (Session) -> Unit, onError: (Throwable) -> Unit)
-    fun saveSession(session: Session, onResult: (Throwable?, String?) -> Unit)
-    fun updateSession(session: Session, onResult: (Throwable?) -> Unit)
-    fun deleteSession(id: String, onResult: (Throwable?) -> Unit)
     fun deleteAllSessions(userId: String, onResult: (Throwable?) -> Unit)
-
-    fun getSessionsByUserId(
-        userId: String,
-        onSuccess: (List<Session>) -> Unit,
-        onError: (Throwable) -> Unit
-    )
+    suspend fun saveSessionAsync(session: Session): String
+    suspend fun updateSessionAsync(session: Session)
+    suspend fun deleteSessionAsync(id: String)
+    suspend fun getSessionsByUserIdAsync(userId: String): List<Session>
 }

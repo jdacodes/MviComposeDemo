@@ -23,4 +23,10 @@ interface StorageDao {
 
     @Query("SELECT * FROM sessions WHERE id = :sessionId")
     suspend fun getSession(sessionId: String): SessionEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSessions(sessions: List<SessionEntity>)
+
+    @Query("DELETE FROM sessions")
+    suspend fun deleteAllSessions()
 }
