@@ -1,22 +1,16 @@
 package com.jdacodes.mvicomposedemo.di
 
-import androidx.navigation.NavController
 import androidx.room.Room
 import com.jdacodes.mvicomposedemo.BuildConfig
 import com.jdacodes.mvicomposedemo.auth.data.AuthenticationManager
-import com.jdacodes.mvicomposedemo.auth.data.local.UserDatabase
+import com.jdacodes.mvicomposedemo.auth.data.local.AppDatabase
 import com.jdacodes.mvicomposedemo.auth.data.repository.AuthRepositoryImpl
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
-import com.jdacodes.mvicomposedemo.auth.presentation.forgot_password.ForgotPasswordViewModel
-import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.LoginViewModel
-import com.jdacodes.mvicomposedemo.auth.presentation.sign_up.SignUpViewModel
-import com.jdacodes.mvicomposedemo.navigation.util.Navigator
-import com.jdacodes.mvicomposedemo.navigation.util.AppNavigator
-import com.jdacodes.mvicomposedemo.profile.presentation.ProfileViewModel
+import com.jdacodes.mvicomposedemo.timer.data.local.repository.StorageRepositoryImpl
 import com.jdacodes.mvicomposedemo.timer.data.remote.StorageServiceImpl
+import com.jdacodes.mvicomposedemo.timer.domain.StorageRepository
 import com.jdacodes.mvicomposedemo.timer.domain.StorageService
 import org.koin.android.ext.koin.androidContext
-import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val databaseModule = module {
@@ -24,8 +18,8 @@ val databaseModule = module {
     single {
         Room.databaseBuilder(
             androidContext(),
-            UserDatabase::class.java,
-            "user_database"
+            AppDatabase::class.java,
+            "app_database"
         )
             .fallbackToDestructiveMigration() // Optional: handle migrations
             .build()
@@ -33,7 +27,10 @@ val databaseModule = module {
 
     // Provide the UserDao as a single instance
     single {
-        get<UserDatabase>().userDao()
+        get<AppDatabase>().userDao()
+    }
+    single {
+        get<AppDatabase>().storageDao()
     }
 }
 
@@ -54,6 +51,13 @@ val authModule = module {
 
     single<StorageService>{
         StorageServiceImpl()
+    }
+
+    single<StorageRepository> {
+        StorageRepositoryImpl(
+            storageService = get(),
+            storageDao = get()
+        )
     }
 
 }

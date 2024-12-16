@@ -33,7 +33,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class TimerViewModel(
-    private val storageService: StorageService,
+    private val storageRepository: StorageService,
     private val authRepository: AuthRepository
 ) : ViewModel() {
     private val _timerState = MutableStateFlow(TimerState())
@@ -221,20 +221,20 @@ class TimerViewModel(
     fun addListener() {
         viewModelScope.launch(showErrorExceptionHandler) {
 
-            storageService.addListener(userId, ::onDocumentEvent, ::onError)
+            storageRepository.addListener(userId, ::onDocumentEvent, ::onError)
         }
     }
 
     fun removeListener() {
         viewModelScope.launch(showErrorExceptionHandler) {
-            storageService.removeListener()
+            storageRepository.removeListener()
         }
     }
 
     fun updateSession(session: Session) {
         viewModelScope.launch(showErrorExceptionHandler) {
             val updatedSession = session.copy(completed = !session.completed)
-            storageService.updateSession(updatedSession) { error ->
+            storageRepository.updateSession(updatedSession) { error ->
                 if (error != null) {
                     Timber.e(error.message ?: "Error updating session")
                     onError(error)
@@ -247,7 +247,7 @@ class TimerViewModel(
 
     private fun loadSession(userId: String) {
         viewModelScope.launch {
-            storageService.getSessionsByUserId(userId, onSuccess = { sessions ->
+            storageRepository.getSessionsByUserId(userId, onSuccess = { sessions ->
                 currentSession = if (sessions.isNotEmpty()) {
                     sessions.last().copy(userId = userId)
                 } else {
@@ -263,7 +263,7 @@ class TimerViewModel(
     private fun saveSession() {
         currentSession?.let { session ->
             viewModelScope.launch(showErrorExceptionHandler) {
-                storageService.saveSession(session) { error, newSessionId ->
+                storageRepository.saveSession(session) { error, newSessionId ->
                     if (error != null) {
                         Timber.e(error.message ?: "Error saving session")
                         onError(error)

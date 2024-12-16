@@ -61,7 +61,7 @@ val navigationModule = module {
 
     viewModel {
         TimerViewModel(
-            storageService = get(),
+           storageRepository = get(),
             authRepository = get()
         )
 
