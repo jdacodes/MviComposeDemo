@@ -79,8 +79,10 @@ class TimerViewModel(
             Timber.d("Sending UI Effect: Timer started")
             if (_timerState.value.lastTimer == TimerType.POMODORO) {
                 viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Pomodoro started")) }
+            } else if (_timerState.value.lastTimer == TimerType.SHORT_BREAK) {
+                viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Short break started")) }
             } else {
-                viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Break started")) }
+                viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Long break started")) }
             }
 
             _timerState.update {
@@ -171,8 +173,10 @@ class TimerViewModel(
         pomodoroTimer?.cancel()
         if (_timerState.value.lastTimer == TimerType.POMODORO) {
             viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Pomodoro stopped")) }
+        } else if (_timerState.value.lastTimer == TimerType.SHORT_BREAK) {
+            viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Short break stopped")) }
         } else {
-            viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Break stopped")) }
+            viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Long break stopped")) }
         }
     }
 
@@ -187,8 +191,10 @@ class TimerViewModel(
         }
         if (_timerState.value.lastTimer == TimerType.POMODORO) {
             viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Pomodoro reset")) }
+        } else if (_timerState.value.lastTimer == TimerType.SHORT_BREAK) {
+            viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Short break reset")) }
         } else {
-            viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Break reset")) }
+            viewModelScope.launch { _uiEffect.send(TimerUiEffect.ShowToast("Long break reset")) }
         }
     }
 
@@ -288,6 +294,7 @@ class TimerViewModel(
 
     private fun onDocumentEvent(wasDocumentDeleted: Boolean, session: Session) {
         if (wasDocumentDeleted) sessions.remove(session.id) else sessions[session.id] = session
+        sessions.entries.forEach { Timber.d("Session: ${it.value}") }
     }
 }
 
