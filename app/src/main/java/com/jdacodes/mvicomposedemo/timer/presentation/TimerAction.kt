@@ -7,4 +7,5 @@ sealed class TimerAction {
     data object StopTimer : TimerAction()
     data class ResetTimer(val seconds: Long) : TimerAction()
     data class ShowNotification(val context: Context,val title: String, val content: String) : TimerAction()
+    data object SessionCompleted : TimerAction()
 }

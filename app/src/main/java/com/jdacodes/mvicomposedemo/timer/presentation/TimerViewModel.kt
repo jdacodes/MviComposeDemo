@@ -42,9 +42,11 @@ class TimerViewModel(
     private var pomodoroCount by mutableIntStateOf(0)
     private val _uiEffect = Channel<TimerUiEffect>()
     val uiEffect = _uiEffect.receiveAsFlow()
+
     var sessions = mutableStateMapOf<String, Session>()
     private var userId by mutableStateOf("")
-    private var currentSession: Session? = null
+    var currentSession: Session? = null
+    private var previousSession: Session? = null
 
     init {
         getUserId()
@@ -70,6 +72,7 @@ class TimerViewModel(
                 action.title,
                 action.content
             )
+            is TimerAction.SessionCompleted -> toggleSessionCompletion()
         }
     }
 
@@ -275,8 +278,9 @@ class TimerViewModel(
                 try {
                     val newSessionId = storageRepository.saveSession(session)
                     Timber.d("Session saved with ID: $newSessionId")
-                    _uiEffect.send(TimerUiEffect.ShowToast("Session saved"))
                     sessions[newSessionId] = session.copy(id = newSessionId)
+                    currentSession = session.copy(id = newSessionId)
+                    _uiEffect.send(TimerUiEffect.ShowToast("Session saved"))
 
                 } catch (e: Exception) {
                     // Error handling
@@ -301,6 +305,70 @@ class TimerViewModel(
 
         saveSession()
     }
+
+    fun toggleSessionCompletion() {
+        viewModelScope.launch(showErrorExceptionHandler) {
+            try {
+                val session = currentSession ?: return@launch
+
+                // Save the previous session if it exists and is not completed
+                previousSession?.let { prev ->
+                    if (!prev.completed) {
+                        val completedPreviousSession = prev.copy(completed = true)
+                        storageRepository.saveSession(completedPreviousSession)
+                    }
+                }
+
+                // Toggle completion of the current session
+                val updatedSession = session.copy(completed = !session.completed)
+                val newSessionId = storageRepository.saveSession(updatedSession)
+
+                // Update session references
+                previousSession = currentSession
+                currentSession = updatedSession.copy(id = newSessionId)
+
+                // Send UI feedback
+                _uiEffect.send(
+                    TimerUiEffect.ShowToast(
+                        if (updatedSession.completed) "Session completed"
+                        else "Session uncompleted"
+                    )
+                )
+
+                Timber.d("Session completion toggled: $updatedSession")
+            } catch (e: Exception) {
+                Timber.e("Error toggling session completion: ${e.message}")
+                _uiEffect.send(TimerUiEffect.ShowToast("Failed to update session"))
+            }
+        }
+    }
+
+//    fun toggleSessionCompletion() {
+//        currentSession?.let { session ->
+//            viewModelScope.launch(showErrorExceptionHandler) {
+//                try {
+//                    val updatedSession = session.copy(completed = !session.completed)
+//                    val newSessionId = storageRepository.saveSession(updatedSession)
+//
+//                    // Update the current session with the new or updated session
+//                    currentSession = updatedSession.copy(id = newSessionId)
+//
+//                    // Optionally send a UI effect
+//                    _uiEffect.send(
+//                        TimerUiEffect.ShowToast(
+//                            if (updatedSession.completed) "Session completed"
+//                            else "Session uncompleted"
+//                        )
+//                    )
+//
+//                    Timber.d("Session completion toggled: $updatedSession")
+//                } catch (e: Exception) {
+//                    Timber.e("Error toggling session completion: ${e.message}")
+//                    _uiEffect.send(TimerUiEffect.ShowToast("Failed to update session"))
+//                }
+//            }
+//        }
+//    }
 
 
     private fun onDocumentEvent(wasDocumentDeleted: Boolean, session: Session) {

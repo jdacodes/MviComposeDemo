@@ -27,18 +27,38 @@ class StorageRepositoryImpl(
         storageService.removeListener()
     }
 
+//override suspend fun saveSession(session: Session): String = withContext(Dispatchers.IO) {
+//    try {
+//        // First, save to Firestore
+//        val newSessionId = storageService.saveSessionAsync(session)
+//
+//        // Then save to local database
+//        val sessionToSave = session.copy(id = newSessionId)
+//        storageDao.saveSession(SessionEntity.fromDomain(sessionToSave))
+//        newSessionId
+//    } catch (e: Exception) {
+//        // Handle any errors that might occur during the process
+//        Timber.e("StorageRepositoryImpl:Error saving session $e")
+//        throw e
+//    }
+//}
 override suspend fun saveSession(session: Session): String = withContext(Dispatchers.IO) {
     try {
-        // First, save to Firestore
-        val newSessionId = storageService.saveSessionAsync(session)
+        // Only generate a new ID if the session is completed
+        val newSessionId = if (session.completed) {
+            storageService.saveSessionAsync(session.copy(id = ""))
+        } else {
+            // If not completed and ID exists, use the existing ID
+            session.id.takeIf { it.isNotEmpty() }
+                ?: storageService.saveSessionAsync(session)
+        }
 
-        // Then save to local database
+        // Prepare session to save with the final ID
         val sessionToSave = session.copy(id = newSessionId)
         storageDao.saveSession(SessionEntity.fromDomain(sessionToSave))
         newSessionId
     } catch (e: Exception) {
-        // Handle any errors that might occur during the process
-        Timber.e("StorageRepositoryImpl:Error saving session $e")
+        Timber.e("StorageRepositoryImpl: Error saving session $e")
         throw e
     }
 }
