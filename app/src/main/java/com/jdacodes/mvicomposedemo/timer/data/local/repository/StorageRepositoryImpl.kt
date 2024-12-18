@@ -42,20 +42,49 @@ class StorageRepositoryImpl(
 //        throw e
 //    }
 //}
+//override suspend fun saveSession(session: Session): String = withContext(Dispatchers.IO) {
+//    try {
+//        // Only generate a new ID if the session is completed
+//        val newSessionId = if (session.completed) {
+//            storageService.saveSessionAsync(session.copy(
+//                id = "",
+//                pomodoro = session.pomodoro,
+//                timeStarted = session.timeStarted,
+//                userId = session.userId,
+//                completed = session.completed
+//                )
+//            )
+//        } else {
+//            // If not completed and ID exists, use the existing ID
+//            session.id.takeIf { it.isNotEmpty() }
+//                ?: storageService.saveSessionAsync(session)
+//        }
+//
+//        // Prepare session to save with the final ID
+//        val sessionToSave = session.copy(id = newSessionId)
+//        storageDao.saveSession(SessionEntity.fromDomain(sessionToSave))
+//        newSessionId
+//    } catch (e: Exception) {
+//        Timber.e("StorageRepositoryImpl: Error saving session $e")
+//        throw e
+//    }
+//}
 override suspend fun saveSession(session: Session): String = withContext(Dispatchers.IO) {
     try {
-        // Only generate a new ID if the session is completed
-        val newSessionId = if (session.completed) {
-            storageService.saveSessionAsync(session.copy(id = ""))
+        // Always use the existing ID if available
+        val newSessionId = if (session.id.isNotEmpty()) {
+            // Update existing session
+            storageService.updateSessionAsync(session)
+            session.id
         } else {
-            // If not completed and ID exists, use the existing ID
-            session.id.takeIf { it.isNotEmpty() }
-                ?: storageService.saveSessionAsync(session)
+            // Create new session
+            storageService.saveSessionAsync(session)
         }
 
-        // Prepare session to save with the final ID
+        // Save to local database
         val sessionToSave = session.copy(id = newSessionId)
         storageDao.saveSession(SessionEntity.fromDomain(sessionToSave))
+
         newSessionId
     } catch (e: Exception) {
         Timber.e("StorageRepositoryImpl: Error saving session $e")

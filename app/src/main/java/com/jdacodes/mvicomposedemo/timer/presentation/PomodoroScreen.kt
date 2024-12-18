@@ -257,10 +257,6 @@ fun PomodoroScreen(
                         Icon(
                             imageVector = Icons.Outlined.Check,
                             contentDescription = "Mark Session Completed",
-                            tint = if (viewModel.currentSession?.completed == true)
-                                Color.Green
-                            else
-                                Color.Gray
                         )
                     }
 

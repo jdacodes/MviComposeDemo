@@ -80,7 +80,16 @@ class StorageServiceImpl : StorageService {
             Firebase.firestore
                 .collection(SESSION_COLLECTION)
                 .document(session.id)
-                .set(session)
+//                .set(session)
+                .update(
+                    mapOf(
+                        COMPLETED to session.completed,
+                        POMODORO to session.pomodoro,
+                        TIME_STARTED to session.timeStarted,
+                        // Add other fields you want to update
+                        // Avoid updating user ID or other immutable fields
+                    )
+                )
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         continuation.resume(Unit)
@@ -146,5 +155,8 @@ class StorageServiceImpl : StorageService {
     companion object {
         private const val SESSION_COLLECTION = "Session"
         private const val USER_ID = "userId"
+        private const val COMPLETED = "completed"
+        private const val POMODORO = "pomodoro"
+        private const val TIME_STARTED = "timeStarted"
     }
 }

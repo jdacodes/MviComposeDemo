@@ -278,8 +278,9 @@ class TimerViewModel(
                 try {
                     val newSessionId = storageRepository.saveSession(session)
                     Timber.d("Session saved with ID: $newSessionId")
-                    sessions[newSessionId] = session.copy(id = newSessionId)
+//                    sessions[newSessionId] = session.copy(id = newSessionId)
                     currentSession = session.copy(id = newSessionId)
+                    sessions[newSessionId] = currentSession!!
                     _uiEffect.send(TimerUiEffect.ShowToast("Session saved"))
 
                 } catch (e: Exception) {
@@ -298,33 +299,39 @@ class TimerViewModel(
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         val formattedTime = currentTime.format(formatter)
 
-        currentSession = currentSession?.copy(
+//        currentSession = currentSession?.copy(
+//            pomodoro = pomodoroCount,
+//            timeStarted = formattedTime
+//        ) ?: Session(userId = userId, pomodoro = pomodoroCount, timeStarted = formattedTime)
+        // Create a new session WITHOUT setting completed to true
+        val newSession = Session(
+            userId = userId,
             pomodoro = pomodoroCount,
-            timeStarted = formattedTime
-        ) ?: Session(userId = userId, pomodoro = pomodoroCount, timeStarted = formattedTime)
+            timeStarted = formattedTime,
+            completed = false  // Explicitly set to false
+        )
 
+        currentSession = newSession
         saveSession()
     }
-
-    fun toggleSessionCompletion() {
+    private fun toggleSessionCompletion() {
         viewModelScope.launch(showErrorExceptionHandler) {
             try {
                 val session = currentSession ?: return@launch
 
-                // Save the previous session if it exists and is not completed
-                previousSession?.let { prev ->
-                    if (!prev.completed) {
-                        val completedPreviousSession = prev.copy(completed = true)
-                        storageRepository.saveSession(completedPreviousSession)
-                    }
-                }
-
                 // Toggle completion of the current session
-                val updatedSession = session.copy(completed = !session.completed)
+                val updatedSession = session.copy(
+                    completed = !session.completed,
+                    id = session.id,
+                    userId = session.userId,
+                    pomodoro = session.pomodoro,
+                    timeStarted = session.timeStarted
+                )
+
+                // Save the current session with its existing/current fields
                 val newSessionId = storageRepository.saveSession(updatedSession)
 
-                // Update session references
-                previousSession = currentSession
+                // Update current session reference
                 currentSession = updatedSession.copy(id = newSessionId)
 
                 // Send UI feedback
@@ -342,6 +349,42 @@ class TimerViewModel(
             }
         }
     }
+//    private fun toggleSessionCompletion() {
+//        viewModelScope.launch(showErrorExceptionHandler) {
+//            try {
+//                val session = currentSession ?: return@launch
+//
+//                // Save the previous session if it exists and is not completed
+//                previousSession?.let { prev ->
+//                    if (!prev.completed) {
+//                        val completedPreviousSession = prev.copy(completed = true)
+//                        storageRepository.saveSession(completedPreviousSession)
+//                    }
+//                }
+//
+//                // Toggle completion of the current session
+//                val updatedSession = session.copy(completed = !session.completed)
+//                val newSessionId = storageRepository.saveSession(updatedSession)
+//
+//                // Update session references
+//                previousSession = currentSession
+//                currentSession = updatedSession.copy(id = newSessionId)
+//
+//                // Send UI feedback
+//                _uiEffect.send(
+//                    TimerUiEffect.ShowToast(
+//                        if (updatedSession.completed) "Session completed"
+//                        else "Session uncompleted"
+//                    )
+//                )
+//
+//                Timber.d("Session completion toggled: $updatedSession")
+//            } catch (e: Exception) {
+//                Timber.e("Error toggling session completion: ${e.message}")
+//                _uiEffect.send(TimerUiEffect.ShowToast("Failed to update session"))
+//            }
+//        }
+//    }
 
 //    fun toggleSessionCompletion() {
 //        currentSession?.let { session ->
