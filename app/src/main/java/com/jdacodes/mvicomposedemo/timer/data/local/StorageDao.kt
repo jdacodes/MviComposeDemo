@@ -18,7 +18,7 @@ interface StorageDao {
     @Query("DELETE FROM sessions WHERE id = :sessionId")
     suspend fun deleteSession(sessionId: String)
 
-    @Query("SELECT * FROM sessions WHERE userId = :userId")
+    @Query("SELECT * FROM sessions WHERE userId = :userId ORDER BY timeStarted DESC")
     suspend fun getSessionsByUserId(userId: String): List<SessionEntity>
 
     @Query("SELECT * FROM sessions WHERE id = :sessionId")

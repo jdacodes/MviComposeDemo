@@ -5,5 +5,6 @@ data class Session(
     val userId: String = "",
     val pomodoro: Int = 0,
     val completed: Boolean = false,
-    val timeStarted: String = ""
+    val timeStarted: String = "",
+    val timeCompleted: String = ""
 )
