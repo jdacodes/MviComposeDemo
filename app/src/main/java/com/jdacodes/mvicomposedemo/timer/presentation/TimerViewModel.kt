@@ -12,6 +12,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
+import com.jdacodes.mvicomposedemo.navigation.util.Navigator
+import com.jdacodes.mvicomposedemo.navigation.util.navigateTimerToSessionListRoute
 import com.jdacodes.mvicomposedemo.timer.util.Constants.LONG_BREAK_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.timer.util.Constants.MILLISECONDS_IN_A_SECOND
 import com.jdacodes.mvicomposedemo.timer.util.Constants.POMODORO_TIMER_SECONDS
@@ -23,6 +25,7 @@ import com.jdacodes.mvicomposedemo.timer.util.ErrorHandlers.showErrorExceptionHa
 import com.jdacodes.mvicomposedemo.timer.util.showNotification
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -36,7 +39,8 @@ import java.util.Locale
 
 class TimerViewModel(
     private val storageRepository: StorageRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val navigator: Navigator
 ) : ViewModel() {
     private val _timerState = MutableStateFlow(TimerState())
     val timerState = _timerState.asStateFlow()
@@ -45,8 +49,11 @@ class TimerViewModel(
     private val _uiEffect = Channel<TimerUiEffect>()
     val uiEffect = _uiEffect.receiveAsFlow()
 
-    var sessions = mutableStateMapOf<String, Session>()
-    private var userId by mutableStateOf("")
+//    var sessions = mutableStateMapOf<String, Session>()
+//        private set
+private val _sessions = MutableStateFlow<Map<String, Session>>(emptyMap())
+    val sessions: StateFlow<Map<String, Session>> = _sessions.asStateFlow()
+     var userId by mutableStateOf("")
     var currentSession: Session? = null
     private var previousSession: Session? = null
 
@@ -76,6 +83,7 @@ class TimerViewModel(
                 action.content
             )
             is TimerAction.SessionCompleted -> toggleSessionCompletion()
+            is TimerAction.NavigateToSessionList -> navigator.navigateTimerToSessionListRoute()
         }
     }
 
@@ -236,27 +244,84 @@ class TimerViewModel(
             storageRepository.removeListener()
         }
     }
-
-    private fun loadSession(userId: String) {
+    fun loadSession(userId: String) {
         viewModelScope.launch(showErrorExceptionHandler) {
             try {
-                val sessions = storageRepository.getSessionsByUserId(userId)
-                Timber.d("Loaded ${sessions.size} sessions for user $userId")
+                val sessionsList = storageRepository.getSessionsByUserId(userId)
+                Timber.d("Loaded ${sessionsList.size} sessions for user $userId")
 
-                // Update UI state or perform further actions
-//                sessions = sessions
-                currentSession = if (sessions.isNotEmpty()) {
-                 sessions.first().copy(userId = userId)
+                // Update _sessions with complete session map
+                _sessions.update { sessionsList.associateBy { it.id } }
+
+                // Update currentSession after all sessions are loaded
+                currentSession = if (_sessions.value.isNotEmpty()) {
+                    _sessions.value.values.firstOrNull()?.copy(userId = userId)
                 } else {
                     Session(userId = userId)
                 }
                 saveSession()
-            }catch (e: Exception) {
+
+                Timber.d("Session in map (after update):")
+                _sessions.value.forEach { (id, session) ->
+                    Timber.d("  ID=$id, Session=$session")
+                }
+            } catch (e: Exception) {
                 Timber.e("Error loading sessions: ${e.message}")
                 _uiEffect.send(TimerUiEffect.ShowToast("Failed to load sessions"))
             }
         }
     }
+//    fun loadSession(userId: String) {
+//        viewModelScope.launch(showErrorExceptionHandler) {
+//            try {
+//                val sessionsList = storageRepository.getSessionsByUserId(userId)
+//                Timber.d("Loaded ${sessionsList.size} sessions for user $userId")
+//
+//                _sessions.update {
+//                    sessionsList.associateBy { it.id }
+//                }
+//                currentSession = if (_sessions.value.isNotEmpty()) {
+//                    _sessions.value.values.firstOrNull()?.copy(userId = userId)
+//                } else {
+//                    Session(userId = userId)
+//                }
+//                saveSession()
+//
+//                _sessions.value.forEach { (id, session) ->
+//                    Timber.d("Session in map: ID=$id, Session=$session")
+//                }
+                // Populate the sessions map using session IDs as keys
+//                sessionsList.forEach { session ->
+//                    if (session.id.isNotEmpty()) { // Ensure session has an ID
+//                        sessions[session.id] = session
+//                        Timber.d("Session added to map: ${session.id}")
+//                    } else {
+//                        Timber.w("Session with empty ID found. Skipping.")
+//                    }
+//                }
+//                currentSession = if (sessionsList.isNotEmpty()) {
+//                 sessionsList.first().copy(userId = userId)
+//                } else {
+//                    Session(userId = userId)
+//                }
+//                saveSession()
+                //Important: Update currentSession after loading all sessions
+//                currentSession = if (_sessions.isNotEmpty()) {
+//                    sessions.values.firstOrNull()?.copy(userId = userId)
+//                } else {
+//                    Session(userId = userId)
+//                }
+//                saveSession()
+                // Log the contents of the sessions map for debugging
+//                sessions.forEach { (id, session) ->
+//                    Timber.d("Session in map: ID=$id, Session=$session")
+//                }
+//            }catch (e: Exception) {
+//                Timber.e("Error loading sessions: ${e.message}")
+//                _uiEffect.send(TimerUiEffect.ShowToast("Failed to load sessions"))
+//            }
+//        }
+//    }
 
     private fun saveSession() {
         currentSession?.let { session ->
@@ -267,7 +332,10 @@ class TimerViewModel(
                     currentSession = session.copy(id = newSessionId)
                     // Update the sessions map
                     if (newSessionId.isNotEmpty()) {
-                        sessions[newSessionId] = currentSession!!
+//                        sessions[newSessionId] = currentSession!!
+                        _sessions.update { currentSessions ->
+                            currentSessions + (newSessionId to currentSession!!)
+                        }
                     }
                     _uiEffect.send(TimerUiEffect.ShowToast("Session saved"))
                 } catch (e: Exception) {
@@ -333,7 +401,10 @@ class TimerViewModel(
                 // Save the new session and update current session
                 val newSessionId = storageRepository.saveSession(newSession)
                 currentSession = newSession.copy(id = newSessionId)
-                sessions[newSessionId] = currentSession!! // Update local map
+                _sessions.update { currentSessions ->
+                    currentSessions + (newSessionId to currentSession!!)
+                }
+//                sessions[newSessionId] = currentSession!! // Update local map
                 _timerState.update { it.copy(pomodoroCount = 0) } // Reset UI state
                 pomodoroCount = 0 // Reset ViewModel count
                 // Send UI feedback
@@ -348,8 +419,15 @@ class TimerViewModel(
     }
 
     private fun onDocumentEvent(wasDocumentDeleted: Boolean, session: Session) {
-        if (wasDocumentDeleted) sessions.remove(session.id) else sessions[session.id] = session
-        sessions.entries.forEach { Timber.d("Session: ${it.value}") }
+//        if (wasDocumentDeleted) sessions.remove(session.id) else sessions[session.id] = session
+//        sessions.entries.forEach { Timber.d("Session: ${it.value}") }
+        _sessions.update { currentSessions ->
+            if (wasDocumentDeleted) {
+                currentSessions - session.id
+            } else {
+                currentSessions + (session.id to session)
+            }
+        }
     }
 }
 

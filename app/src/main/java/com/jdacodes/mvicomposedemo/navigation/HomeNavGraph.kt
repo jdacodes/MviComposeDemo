@@ -15,10 +15,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.jdacodes.mvicomposedemo.navigation.util.DashboardRoute
 import com.jdacodes.mvicomposedemo.navigation.util.ProfileRoute
+import com.jdacodes.mvicomposedemo.navigation.util.SessionListRoute
 import com.jdacodes.mvicomposedemo.navigation.util.TimerRoute
 import com.jdacodes.mvicomposedemo.profile.presentation.ProfileScreen
 import com.jdacodes.mvicomposedemo.profile.presentation.ProfileViewModel
 import com.jdacodes.mvicomposedemo.timer.presentation.PomodoroScreen
+import com.jdacodes.mvicomposedemo.timer.presentation.SessionList
 import com.jdacodes.mvicomposedemo.timer.presentation.TimerViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -50,7 +52,7 @@ fun HomeNavGraph(
         }
 
         composable<TimerRoute> {
-            val timerViewModel: TimerViewModel = koinViewModel()
+            val timerViewModel: TimerViewModel = koinViewModel { parametersOf(navController) }
             val timerState by timerViewModel.timerState.collectAsState()
             PomodoroScreen(
                 viewModel = timerViewModel,
@@ -59,7 +61,12 @@ fun HomeNavGraph(
                 uiEffect = timerViewModel.uiEffect
             )
         }
-
+        composable<SessionListRoute> {
+            val timerViewModel: TimerViewModel = koinViewModel { parametersOf(navController) }
+            SessionList(viewModel = timerViewModel, onSessionClick = { session ->
+                // Handle session click here, e.g., navigate to details screen
+            })
+        }
         composable<DashboardRoute> {
             Box(
                 modifier = modifier,

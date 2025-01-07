@@ -1,6 +1,5 @@
 package com.jdacodes.mvicomposedemo.navigation.util
 
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptionsBuilder
 import kotlinx.serialization.Serializable
@@ -30,6 +29,9 @@ data object TimerRoute
 
 @Serializable
 data object DashboardRoute
+
+@Serializable
+data object SessionListRoute
 
 fun Navigator.navigateTo(route: Any, options: NavOptionsBuilder.() -> Unit = {}) {
     navigateTo(route, options)
@@ -64,14 +66,18 @@ fun Navigator.navigateSignUpToLoginRoute() {
         popUpTo(SignUpRoute) { inclusive = true }
     }
 }
-
+//Navigation Extensions for Home graph
 fun Navigator.navigateProfileToAuthGraph(navController: NavHostController) {
-//    navigateTo(AuthGraph) {
-//        popUpTo(0) {}
-//    }
     navController.navigate(AuthGraph) {
         popUpTo(0) {}
     }
+}
+
+fun Navigator.navigateTimerToSessionListRoute() {
+    navigateTo(SessionListRoute) {
+        popUpTo(TimerRoute) { inclusive = false }
+    }
+
 }
 
 
