@@ -9,7 +9,6 @@ import com.jdacodes.mvicomposedemo.auth.presentation.splash.presentation.SplashV
 import com.jdacodes.mvicomposedemo.navigation.util.AppNavigator
 import com.jdacodes.mvicomposedemo.navigation.util.Navigator
 import com.jdacodes.mvicomposedemo.profile.presentation.ProfileViewModel
-import com.jdacodes.mvicomposedemo.timer.domain.StorageService
 import com.jdacodes.mvicomposedemo.timer.presentation.TimerViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -52,19 +51,19 @@ val navigationModule = module {
         )
     }
 
-    viewModel {(savedStateHandle: SavedStateHandle) ->
+    viewModel { (savedStateHandle: SavedStateHandle) ->
         SplashViewModel(
             authRepository = get(),
             savedStateHandle = savedStateHandle
         )
     }
-
     viewModel { (navController: NavController) ->
         TimerViewModel(
-           storageRepository = get(),
+            storageRepository = get(),
             authRepository = get(),
             navigator = AppNavigator(navController)
         )
 
     }
+
 }

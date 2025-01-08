@@ -33,6 +33,8 @@ fun HomeNavGraph(
     modifier: Modifier = Modifier,
     startDestination: Any = ProfileRoute
 ) {
+    val timerViewModel: TimerViewModel = koinViewModel { parametersOf(navController) }
+
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -52,7 +54,6 @@ fun HomeNavGraph(
         }
 
         composable<TimerRoute> {
-            val timerViewModel: TimerViewModel = koinViewModel { parametersOf(navController) }
             val timerState by timerViewModel.timerState.collectAsState()
             PomodoroScreen(
                 viewModel = timerViewModel,
@@ -62,7 +63,6 @@ fun HomeNavGraph(
             )
         }
         composable<SessionListRoute> {
-            val timerViewModel: TimerViewModel = koinViewModel { parametersOf(navController) }
             SessionList(viewModel = timerViewModel, onSessionClick = { session ->
                 // Handle session click here, e.g., navigate to details screen
             })

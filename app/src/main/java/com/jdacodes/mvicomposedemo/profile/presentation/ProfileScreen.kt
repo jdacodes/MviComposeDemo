@@ -14,13 +14,16 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.jdacodes.mvicomposedemo.R
 import com.jdacodes.mvicomposedemo.auth.domain.model.User
 import com.jdacodes.mvicomposedemo.profile.presentation.composable.ProfileTopBar
 import kotlinx.coroutines.flow.Flow
@@ -47,7 +50,7 @@ fun ProfileScreen(
                     ).show()
                 }
 
-                 is ProfileUiEffect.Navigate -> {
+                is ProfileUiEffect.Navigate -> {
                     onAction(ProfileAction.NavigateToAuth(rootNavController))
                 }
             }
@@ -62,11 +65,17 @@ fun ProfileScreen(
             ProfileTopBar(
                 onSignOutClick = { onAction(ProfileAction.SignOut) },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+                    .fillMaxWidth(),
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                    actionIconContentColor = MaterialTheme.colorScheme.primary
+
+                ),
+                titleText = stringResource(R.string.profile)
             )
         },
-        modifier = modifier.padding(16.dp)
+//        modifier = modifier.padding(16.dp)
     ) { innerPadding ->
         Box(
             modifier = Modifier

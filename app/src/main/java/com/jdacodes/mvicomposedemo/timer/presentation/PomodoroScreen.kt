@@ -41,6 +41,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -152,6 +153,8 @@ fun PomodoroScreen(
         viewModel.addListener()
         onDispose { viewModel.removeListener() }
     }
+
+//    val sessions by viewModel.sessions.collectAsState(initial = emptyMap())
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -171,7 +174,7 @@ fun PomodoroScreen(
                     IconButton(onClick = { onAction(TimerAction.NavigateToSessionList) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.List,
-                            contentDescription = "List of sessions"
+                            contentDescription = stringResource(R.string.session_list)
                         )
                     }
                 }

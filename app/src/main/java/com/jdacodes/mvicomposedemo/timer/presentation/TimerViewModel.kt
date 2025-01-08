@@ -6,7 +6,6 @@ import android.os.CountDownTimer
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -14,12 +13,12 @@ import androidx.lifecycle.viewModelScope
 import com.jdacodes.mvicomposedemo.auth.domain.repository.AuthRepository
 import com.jdacodes.mvicomposedemo.navigation.util.Navigator
 import com.jdacodes.mvicomposedemo.navigation.util.navigateTimerToSessionListRoute
+import com.jdacodes.mvicomposedemo.timer.domain.StorageRepository
+import com.jdacodes.mvicomposedemo.timer.domain.model.Session
 import com.jdacodes.mvicomposedemo.timer.util.Constants.LONG_BREAK_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.timer.util.Constants.MILLISECONDS_IN_A_SECOND
 import com.jdacodes.mvicomposedemo.timer.util.Constants.POMODORO_TIMER_SECONDS
 import com.jdacodes.mvicomposedemo.timer.util.Constants.SHORT_BREAK_TIMER_SECONDS
-import com.jdacodes.mvicomposedemo.timer.domain.StorageRepository
-import com.jdacodes.mvicomposedemo.timer.domain.model.Session
 import com.jdacodes.mvicomposedemo.timer.util.ErrorHandlers.onError
 import com.jdacodes.mvicomposedemo.timer.util.ErrorHandlers.showErrorExceptionHandler
 import com.jdacodes.mvicomposedemo.timer.util.showNotification
@@ -49,11 +48,11 @@ class TimerViewModel(
     private val _uiEffect = Channel<TimerUiEffect>()
     val uiEffect = _uiEffect.receiveAsFlow()
 
-//    var sessions = mutableStateMapOf<String, Session>()
+    //    var sessions = mutableStateMapOf<String, Session>()
 //        private set
-private val _sessions = MutableStateFlow<Map<String, Session>>(emptyMap())
+    private val _sessions = MutableStateFlow<Map<String, Session>>(emptyMap())
     val sessions: StateFlow<Map<String, Session>> = _sessions.asStateFlow()
-     var userId by mutableStateOf("")
+    var userId by mutableStateOf("")
     var currentSession: Session? = null
     private var previousSession: Session? = null
 
@@ -82,6 +81,7 @@ private val _sessions = MutableStateFlow<Map<String, Session>>(emptyMap())
                 action.title,
                 action.content
             )
+
             is TimerAction.SessionCompleted -> toggleSessionCompletion()
             is TimerAction.NavigateToSessionList -> navigator.navigateTimerToSessionListRoute()
         }
@@ -244,6 +244,7 @@ private val _sessions = MutableStateFlow<Map<String, Session>>(emptyMap())
             storageRepository.removeListener()
         }
     }
+
     fun loadSession(userId: String) {
         viewModelScope.launch(showErrorExceptionHandler) {
             try {
@@ -271,57 +272,6 @@ private val _sessions = MutableStateFlow<Map<String, Session>>(emptyMap())
             }
         }
     }
-//    fun loadSession(userId: String) {
-//        viewModelScope.launch(showErrorExceptionHandler) {
-//            try {
-//                val sessionsList = storageRepository.getSessionsByUserId(userId)
-//                Timber.d("Loaded ${sessionsList.size} sessions for user $userId")
-//
-//                _sessions.update {
-//                    sessionsList.associateBy { it.id }
-//                }
-//                currentSession = if (_sessions.value.isNotEmpty()) {
-//                    _sessions.value.values.firstOrNull()?.copy(userId = userId)
-//                } else {
-//                    Session(userId = userId)
-//                }
-//                saveSession()
-//
-//                _sessions.value.forEach { (id, session) ->
-//                    Timber.d("Session in map: ID=$id, Session=$session")
-//                }
-                // Populate the sessions map using session IDs as keys
-//                sessionsList.forEach { session ->
-//                    if (session.id.isNotEmpty()) { // Ensure session has an ID
-//                        sessions[session.id] = session
-//                        Timber.d("Session added to map: ${session.id}")
-//                    } else {
-//                        Timber.w("Session with empty ID found. Skipping.")
-//                    }
-//                }
-//                currentSession = if (sessionsList.isNotEmpty()) {
-//                 sessionsList.first().copy(userId = userId)
-//                } else {
-//                    Session(userId = userId)
-//                }
-//                saveSession()
-                //Important: Update currentSession after loading all sessions
-//                currentSession = if (_sessions.isNotEmpty()) {
-//                    sessions.values.firstOrNull()?.copy(userId = userId)
-//                } else {
-//                    Session(userId = userId)
-//                }
-//                saveSession()
-                // Log the contents of the sessions map for debugging
-//                sessions.forEach { (id, session) ->
-//                    Timber.d("Session in map: ID=$id, Session=$session")
-//                }
-//            }catch (e: Exception) {
-//                Timber.e("Error loading sessions: ${e.message}")
-//                _uiEffect.send(TimerUiEffect.ShowToast("Failed to load sessions"))
-//            }
-//        }
-//    }
 
     private fun saveSession() {
         currentSession?.let { session ->
@@ -354,23 +304,25 @@ private val _sessions = MutableStateFlow<Map<String, Session>>(emptyMap())
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         val formattedTime = currentTime.format(formatter)
 
-        currentSession = if (currentSession == null || currentSession?.timeStarted.isNullOrBlank()) {
-            Session(
-                id = currentSession?.id ?: "", // Preserve existing ID if any
-                userId = userId,
-                pomodoro = pomodoroCount,
-                timeStarted = formattedTime,
-                completed = false
-            )
-        } else {
-            // Update existing session
-            currentSession?.copy(
-                pomodoro = pomodoroCount,
-                timeStarted = formattedTime
-            )
-        }
+        currentSession =
+            if (currentSession == null || currentSession?.timeStarted.isNullOrBlank()) {
+                Session(
+                    id = currentSession?.id ?: "", // Preserve existing ID if any
+                    userId = userId,
+                    pomodoro = pomodoroCount,
+                    timeStarted = formattedTime,
+                    completed = false
+                )
+            } else {
+                // Update existing session
+                currentSession?.copy(
+                    pomodoro = pomodoroCount,
+                    timeStarted = formattedTime
+                )
+            }
         saveSession()
     }
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun toggleSessionCompletion() {
         viewModelScope.launch(showErrorExceptionHandler) {
@@ -386,9 +338,10 @@ private val _sessions = MutableStateFlow<Map<String, Session>>(emptyMap())
                 )
                 // Save the completed session
                 storageRepository.saveSession(completedSession)
-                                // Create a new session
+                // Create a new session
                 val currentTime = ZonedDateTime.now(ZoneId.of("UTC"))
-                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                val formatter =
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 val formattedTime = currentTime.format(formatter)
 
                 val newSession = Session(
@@ -404,7 +357,6 @@ private val _sessions = MutableStateFlow<Map<String, Session>>(emptyMap())
                 _sessions.update { currentSessions ->
                     currentSessions + (newSessionId to currentSession!!)
                 }
-//                sessions[newSessionId] = currentSession!! // Update local map
                 _timerState.update { it.copy(pomodoroCount = 0) } // Reset UI state
                 pomodoroCount = 0 // Reset ViewModel count
                 // Send UI feedback
@@ -419,8 +371,6 @@ private val _sessions = MutableStateFlow<Map<String, Session>>(emptyMap())
     }
 
     private fun onDocumentEvent(wasDocumentDeleted: Boolean, session: Session) {
-//        if (wasDocumentDeleted) sessions.remove(session.id) else sessions[session.id] = session
-//        sessions.entries.forEach { Timber.d("Session: ${it.value}") }
         _sessions.update { currentSessions ->
             if (wasDocumentDeleted) {
                 currentSessions - session.id
