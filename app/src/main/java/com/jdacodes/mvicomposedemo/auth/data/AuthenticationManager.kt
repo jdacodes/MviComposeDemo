@@ -242,6 +242,7 @@ fun firebaseUserToUser(firebaseUser: FirebaseUser?): User {
     return User(
         id = firebaseUser?.uid ?: "",
         email = firebaseUser?.email ?: "",
-        displayName = firebaseUser?.displayName ?: ""
+        displayName = firebaseUser?.displayName ?: "",
+        photoUrl = firebaseUser?.photoUrl.toString()
     )
 }

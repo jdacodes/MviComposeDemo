@@ -8,7 +8,8 @@ fun User.toUserEntity(isLoggedIn: Boolean): UserEntity {
         email = this.email,
         displayName = this.displayName,
         isLoggedIn = isLoggedIn,
-        id = this.id
+        id = this.id,
+        photoUrl = this.photoUrl
     )
 }
 
@@ -16,6 +17,7 @@ fun UserEntity.toDomainUser(): User {
     return User(
         id = this.id ?: "",
         email = this.email ?: "",
-        displayName = this.displayName ?: ""
+        displayName = this.displayName ?: "",
+        photoUrl = this.photoUrl
     )
 }

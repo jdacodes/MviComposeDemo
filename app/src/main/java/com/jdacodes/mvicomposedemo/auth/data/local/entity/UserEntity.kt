@@ -8,5 +8,6 @@ data class UserEntity(
     @PrimaryKey val id: String,
     val email: String,
     val displayName: String,
-    val isLoggedIn: Boolean = false
+    val isLoggedIn: Boolean = false,
+    val photoUrl: String? = null,
 )

@@ -25,10 +25,15 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.jdacodes.mvicomposedemo.R
 import com.jdacodes.mvicomposedemo.auth.domain.model.User
+import com.jdacodes.mvicomposedemo.profile.presentation.composable.CollapsibleContainer
 import com.jdacodes.mvicomposedemo.profile.presentation.composable.ProfileTopBar
+import com.jdacodes.mvicomposedemo.profile.util.CollapsingAppBarNestedScrollConnection
 import kotlinx.coroutines.flow.Flow
+import timber.log.Timber
 
-@OptIn(ExperimentalMaterial3Api::class)
+val contents: List<String> = (1..50).map { "Lazy Column Item $it" }
+val connection = CollapsingAppBarNestedScrollConnection() //initializing nestedScrollConnection here
+
 @Composable
 fun ProfileScreen(
     state: ProfileState,
@@ -61,26 +66,9 @@ fun ProfileScreen(
     }
 
     Scaffold(
-        topBar = {
-            ProfileTopBar(
-                onSignOutClick = { onAction(ProfileAction.SignOut) },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
-                    actionIconContentColor = MaterialTheme.colorScheme.primary
 
-                ),
-                titleText = stringResource(R.string.profile)
-            )
-        },
-//        modifier = modifier.padding(16.dp)
     ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .padding(innerPadding)
-        ) {
+        Box{
             when (state) {
                 is ProfileState.Loading -> {
                     Box(
@@ -92,12 +80,14 @@ fun ProfileScreen(
                 }
 
                 is ProfileState.Success -> {
-                    ProfileContent(
+                    Timber.d("User id: ${state.user?.id.toString()}")
+                    CollapsibleContainer(
                         user = state.user,
                         onAction = onAction,
+                        contents = contents,
+                        innerPadding = innerPadding,
                         modifier = modifier
                     )
-
                 }
             }
         }
