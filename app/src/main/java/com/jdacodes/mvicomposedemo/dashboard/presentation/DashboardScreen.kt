@@ -1,6 +1,8 @@
 package com.jdacodes.mvicomposedemo.dashboard.presentation
 
+import android.os.Build
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,6 +27,7 @@ import com.jdacodes.mvicomposedemo.R
 import com.jdacodes.mvicomposedemo.dashboard.presentation.composable.WeeklyBarChart
 import kotlinx.coroutines.flow.Flow
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(

@@ -1,5 +1,7 @@
 package com.jdacodes.mvicomposedemo.di
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavController
 import com.jdacodes.mvicomposedemo.auth.presentation.forgot_password.ForgotPasswordViewModel
@@ -14,6 +16,7 @@ import com.jdacodes.mvicomposedemo.timer.presentation.TimerViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
+@RequiresApi(Build.VERSION_CODES.O)
 val navigationModule = module {
     // Define NavController as a parameter
     factory<Navigator> { params ->
