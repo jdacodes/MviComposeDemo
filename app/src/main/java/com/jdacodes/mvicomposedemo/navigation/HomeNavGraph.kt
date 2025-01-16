@@ -13,6 +13,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.jdacodes.mvicomposedemo.dashboard.presentation.DashboardScreen
+import com.jdacodes.mvicomposedemo.dashboard.presentation.DashboardViewModel
 import com.jdacodes.mvicomposedemo.navigation.util.DashboardRoute
 import com.jdacodes.mvicomposedemo.navigation.util.ProfileRoute
 import com.jdacodes.mvicomposedemo.navigation.util.SessionListRoute
@@ -68,12 +70,16 @@ fun HomeNavGraph(
             })
         }
         composable<DashboardRoute> {
-            Box(
+            val viewModel: DashboardViewModel = koinViewModel { parametersOf(navController) }
+            val dashboardState by viewModel.dashboardState.collectAsStateWithLifecycle()
+            DashboardScreen(
+                dashboardState = dashboardState,
                 modifier = modifier,
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Dashboard")
-            }
+                onAction = viewModel::onAction,
+                uiEffect = viewModel.uiEffect,
+                viewModel = viewModel,
+            )
+
         }
     }
 }

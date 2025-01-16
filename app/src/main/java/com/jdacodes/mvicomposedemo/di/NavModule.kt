@@ -6,6 +6,7 @@ import com.jdacodes.mvicomposedemo.auth.presentation.forgot_password.ForgotPassw
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_in.LoginViewModel
 import com.jdacodes.mvicomposedemo.auth.presentation.sign_up.SignUpViewModel
 import com.jdacodes.mvicomposedemo.auth.presentation.splash.presentation.SplashViewModel
+import com.jdacodes.mvicomposedemo.dashboard.presentation.DashboardViewModel
 import com.jdacodes.mvicomposedemo.navigation.util.AppNavigator
 import com.jdacodes.mvicomposedemo.navigation.util.Navigator
 import com.jdacodes.mvicomposedemo.profile.presentation.ProfileViewModel
@@ -64,6 +65,14 @@ val navigationModule = module {
             navigator = AppNavigator(navController)
         )
 
+    }
+
+    viewModel { (navController: NavController) ->
+        DashboardViewModel(
+            storageRepository = get(),
+            authRepository = get(),
+            navigator = AppNavigator(navController)
+        )
     }
 
 }
