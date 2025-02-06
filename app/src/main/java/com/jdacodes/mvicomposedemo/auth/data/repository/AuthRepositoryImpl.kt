@@ -31,6 +31,7 @@ class AuthRepositoryImpl(
                                 id = response.data.id ?: "",
                                 email = response.data.email ?: "",
                                 displayName = response.data.displayName ?: "",
+                                photoUrl = response.data.photoUrl
                             )
                             // Convert to UserEntity and save to Room
                             val userEntity = user.toUserEntity(isLoggedIn = true)
@@ -191,6 +192,7 @@ class AuthRepositoryImpl(
                                 id = response.data.id ?: "",
                                 email = response.data.email ?: "",
                                 displayName = response.data.displayName ?: "",
+                                photoUrl = response.data.photoUrl
                             )
                             val userEntity = user.toUserEntity(isLoggedIn = true)
                             userDao.insertUser(userEntity)
