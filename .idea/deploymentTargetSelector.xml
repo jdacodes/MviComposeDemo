@@ -13,10 +13,16 @@
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="afterInsertingOneWord_mustSeeThatWord()">
+      <SelectionState runConfigName="savingSessionEntityAndVerifyingStorage()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="savingSessionEntityAndVerifyingStorage()">
+      <SelectionState runConfigName="insertUserEntityAndVerifyStorage()">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="insertAndDeleteUserEntityAndVerifyStorage()">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="UserTests">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

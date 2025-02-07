@@ -27,6 +27,9 @@ splashScreen = "1.0.1"
 ksp = "2.0.0-1.0.24"
 room = "2.6.1"
 coil = "2.7.0"
+turbine = "0.12.1" # or latest
+truth = "1.4.2" # or latest
+mockitoKotlin = "4.1.0" # or latest
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -72,6 +75,10 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-roomtesting = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version = "1.8.1" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+truth = { module = "com.google.truth:truth", version.ref = "truth" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
@@ -85,4 +92,10 @@ koin = [
     "koin-core",
     "koin-android",
     "koin-androidx-compose"
+]
+test = [
+
+    "turbine",
+    "truth",
+    "mockito-kotlin"
 ]
