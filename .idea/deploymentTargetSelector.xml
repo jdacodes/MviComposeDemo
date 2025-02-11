@@ -13,12 +13,6 @@
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="savingSessionEntityAndVerifyingStorage()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="insertUserEntityAndVerifyStorage()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
       <SelectionState runConfigName="insertAndDeleteUserEntityAndVerifyStorage()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
